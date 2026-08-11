@@ -1,0 +1,104 @@
+/* eslint-disable @next/next/no-img-element -- this screen previews a local object URL before upload */
+import { FileImage, ImagePlus, Send, ShieldCheck, Video } from 'lucide-react';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useEffect, useRef, useState } from 'react';
+
+import { Field, PageHeading } from '@/components/Ui';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+
+const initialForm = { title: '', caption: '', hashtags: '', safety_note: '', source_url: '' };
+
+export default function CreatePage() {
+  const router = useRouter();
+  const inputRef = useRef(null);
+  const { savePost } = useWorkspace();
+  const [mediaType, setMediaType] = useState('image');
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState('');
+  const [form, setForm] = useState(initialForm);
+  const [saving, setSaving] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const chooseFile = (selectedFile) => {
+    if (!selectedFile) return;
+    const maxSize = mediaType === 'video' ? 50 * 1024 * 1024 : 8 * 1024 * 1024;
+    if (selectedFile.size > maxSize) {
+      setError(mediaType === 'video' ? 'Choose a video below 50 MB.' : 'Choose an image below 8 MB.');
+      return;
+    }
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(selectedFile);
+    setPreview(URL.createObjectURL(selectedFile));
+    setError('');
+  };
+
+  const changeType = (type) => {
+    if (preview) URL.revokeObjectURL(preview);
+    setMediaType(type);
+    setFile(null);
+    setPreview('');
+  };
+
+  const submit = async (status) => {
+    setSaving(status);
+    setError('');
+    try {
+      await savePost({ ...form, file, media_type: mediaType, status });
+      await router.push('/posts?created=1');
+    } catch (saveError) {
+      setError(saveError.message);
+      setSaving('');
+    }
+  };
+
+  return (
+    <>
+      <Head><title>Create post · DRJIVA Doctors</title></Head>
+      <div className="page-container">
+        <PageHeading eyebrow="Content studio" title="Create health post" description="Make one useful idea clear, safe and easy to act on." />
+        <div className="composer-grid">
+          <section className="grid gap-5">
+            <div className="segmented-control" aria-label="Media type">
+              <button className={mediaType === 'image' ? 'selected' : ''} type="button" onClick={() => changeType('image')}><FileImage size={18} /> Image</button>
+              <button className={mediaType === 'video' ? 'selected' : ''} type="button" onClick={() => changeType('video')}><Video size={18} /> Video</button>
+            </div>
+
+            <button className="media-dropzone" type="button" onClick={() => inputRef.current?.click()}>
+              {preview ? (
+                mediaType === 'video' ? <video className="size-full object-cover" src={preview} muted loop autoPlay playsInline /> : <img className="size-full object-cover" src={preview} alt="Selected post preview" />
+              ) : (
+                <span className="grid place-items-center gap-3 px-5 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-white text-brand shadow-sm"><ImagePlus size={26} /></span><strong>Add {mediaType === 'video' ? 'a short video' : 'a cover image'}</strong><small>Tap to browse · {mediaType === 'video' ? 'MP4 up to 50 MB' : 'JPG, PNG or WebP up to 8 MB'}</small></span>
+              )}
+            </button>
+            <input ref={inputRef} className="sr-only" type="file" accept={mediaType === 'video' ? 'video/mp4,video/quicktime' : 'image/jpeg,image/png,image/webp'} onChange={(event) => chooseFile(event.target.files?.[0])} />
+
+            <div className="panel grid gap-5 p-5 sm:p-6">
+              <Field label="Post title" placeholder="Example: 5 stretches for a better morning" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
+              <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1200 characters`} />
+              <Field label="Hashtags" placeholder="#Wellness #MorningRoutine" value={form.hashtags} onChange={(event) => setForm((current) => ({ ...current, hashtags: event.target.value }))} hint="Use up to 10 relevant topics." />
+              <Field label="Safety note" placeholder="Example: Stop if you feel pain and consult your doctor." textarea value={form.safety_note} onChange={(event) => setForm((current) => ({ ...current, safety_note: event.target.value }))} />
+              <Field label="Clinical source (optional)" type="url" placeholder="https://…" value={form.source_url} onChange={(event) => setForm((current) => ({ ...current, source_url: event.target.value }))} />
+            </div>
+          </section>
+
+          <aside className="composer-aside">
+            <div className="panel p-5">
+              <p className="eyebrow">Before publishing</p>
+              <ul className="mt-4 grid gap-4 text-sm leading-6 text-muted">
+                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Keep the language educational and understandable.</span></li>
+                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Do not include patient-identifying information.</span></li>
+                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Add a safety note when advice has limitations.</span></li>
+              </ul>
+            </div>
+            {error ? <p className="error-banner" role="alert">{error}</p> : null}
+            <button className="primary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('published')}><Send size={18} /> {saving === 'published' ? 'Publishing…' : 'Publish post'}</button>
+            <button className="secondary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('draft')}>{saving === 'draft' ? 'Saving…' : 'Save as draft'}</button>
+          </aside>
+        </div>
+      </div>
+    </>
+  );
+}
