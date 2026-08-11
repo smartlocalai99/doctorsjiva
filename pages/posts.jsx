@@ -43,7 +43,7 @@ export default function PostsPage() {
     <>
       <Head><title>Posts · DRJIVA Doctors</title></Head>
       <div className="page-container">
-        <PageHeading eyebrow="Library" title="Your Posts" description="Review published guidance and archived content." action={<Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> New Post</Link>} />
+        <PageHeading eyebrow="Content library" title="Manage your posts" description="Review reach, find published guidance, and permanently delete content you no longer want in the patient feed." action={<Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> Create post</Link>} />
 
         {router.query.published ? <div className="success-banner" role="status">Published to the patient feed.</div> : null}
         {error ? <div className="error-banner" role="alert">{error}</div> : null}
@@ -65,8 +65,8 @@ export default function PostsPage() {
         </section>
 
         {loading ? <div className="grid gap-3 xl:grid-cols-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div> : filteredPosts.length ? (
-          <div className="posts-social-grid">
-            {filteredPosts.map((post) => <PostCard deleting={deletingId === post.id} key={post.id} post={post} variant="grid" onDelete={remove} />)}
+          <div className="content-library-list">
+            {filteredPosts.map((post) => <PostCard deleting={deletingId === post.id} key={post.id} post={post} variant="manage" onDelete={remove} />)}
           </div>
         ) : (
           <EmptyState icon={Archive} title="No matching posts" description="Try another filter or create a new health post." action={<Link className="primary-button" href="/create">Create post</Link>} />

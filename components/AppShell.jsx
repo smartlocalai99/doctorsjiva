@@ -16,8 +16,8 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { AppLogo } from './AppLogo';
 
 const navigation = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/create', label: 'Create post', icon: FilePlus2 },
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/create', label: 'Publish', icon: FilePlus2 },
   { href: '/posts', label: 'Content', icon: PanelsTopLeft },
   { href: '/profile', label: 'Profile', icon: CircleUserRound },
 ];

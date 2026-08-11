@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Field, PageHeading } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
-const initialForm = { title: '', caption: '', hashtags: '', safety_note: '', source_url: '' };
+const initialForm = { title: '', caption: '' };
 
 export default function CreatePage() {
   const router = useRouter();
@@ -71,39 +71,36 @@ export default function CreatePage() {
         <div className="composer-grid">
           <section className="social-preview-column">
             <div className="segmented-control" aria-label="Media type">
-              <button className={mediaType === 'image' ? 'selected' : ''} type="button" onClick={() => changeType('image')}><FileImage size={18} /> Image</button>
-              <button className={mediaType === 'video' ? 'selected' : ''} type="button" onClick={() => changeType('video')}><Video size={18} /> Video</button>
+              <button className={mediaType === 'image' ? 'selected' : ''} type="button" onClick={() => changeType('image')}><FileImage aria-hidden="true" size={18} /> Image</button>
+              <button className={mediaType === 'video' ? 'selected' : ''} type="button" onClick={() => changeType('video')}><Video aria-hidden="true" size={18} /> Video</button>
             </div>
 
-            <button className="media-dropzone social-media-preview" type="button" onClick={() => inputRef.current?.click()}>
+            <button aria-label={preview ? 'Change selected post media' : 'Choose post media'} className="media-dropzone social-media-preview" type="button" onClick={() => inputRef.current?.click()}>
               {preview ? (
                 mediaType === 'video' ? <video className="size-full object-cover" src={preview} muted loop autoPlay playsInline /> : <img className="size-full object-cover" src={preview} alt="Selected post preview" width="720" height="1120" />
               ) : (
-                <span className="grid place-items-center gap-3 px-5 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-white text-brand shadow-sm"><ImagePlus size={26} /></span><strong>Add {mediaType === 'video' ? 'a short video' : 'a cover image'}</strong><small>Tap to browse · {mediaType === 'video' ? 'MP4 up to 50 MB' : 'JPG, PNG or WebP up to 8 MB'}</small></span>
+                <span className="grid place-items-center gap-3 px-5 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-white text-brand shadow-sm"><ImagePlus aria-hidden="true" size={26} /></span><strong>Add {mediaType === 'video' ? 'a short video' : 'a cover image'}</strong><small>Tap to browse · {mediaType === 'video' ? 'MP4 up to 50 MB' : 'JPG, PNG or WebP up to 8 MB'}</small></span>
               )}
               <span className="composer-preview-overlay">
-                <span className="composer-doctor"><b>RR</b><span><strong>{profile?.display_name || 'Dr. Ritish Reddy'} <BadgeCheck size={12} fill="currentColor" /></strong><small>{profile?.specialty || 'Gastroenterology'}</small></span></span>
+                <span className="composer-doctor"><b>{initials(profile?.display_name)}</b><span><strong>{profile?.display_name || 'Dr. Ritish Reddy'} <BadgeCheck aria-label="Verified doctor" className="composer-verified" size={14} fill="currentColor" /></strong><small>{profile?.specialty || 'Gastroenterology'}</small></span></span>
                 <span className="composer-caption"><strong>{form.title || 'Your post title appears here'}</strong><small>{form.caption || 'Add a clear caption patients can understand.'}</small></span>
-                <span className="composer-social-actions"><i><Heart size={21} />Like</i><i><MessageCircle size={21} />Comment</i></span>
+                <span className="composer-social-actions"><i><Heart aria-hidden="true" size={21} />Like</i><i><MessageCircle aria-hidden="true" size={21} />Comment</i></span>
               </span>
             </button>
-            <input ref={inputRef} className="sr-only" type="file" accept={mediaType === 'video' ? 'video/mp4,video/quicktime' : 'image/jpeg,image/png,image/webp'} onChange={(event) => chooseFile(event.target.files?.[0])} />
+            <input ref={inputRef} hidden type="file" accept={mediaType === 'video' ? 'video/mp4,video/quicktime' : 'image/jpeg,image/png,image/webp'} onChange={(event) => chooseFile(event.target.files?.[0])} />
           </section>
 
           <section className="composer-form-column">
             <div className="panel grid gap-5 p-5 sm:p-6">
               <Field label="Post Title" placeholder="Example: 3 Signs Your Gut Needs Attention…" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
               <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1,200 characters`} />
-              <Field label="Hashtags" placeholder="#GutHealth #Gastroenterology…" value={form.hashtags} onChange={(event) => setForm((current) => ({ ...current, hashtags: event.target.value }))} hint="Use up to 10 relevant topics." />
-              <Field label="Safety Note" placeholder="Example: Seek medical care if symptoms persist…" textarea value={form.safety_note} onChange={(event) => setForm((current) => ({ ...current, safety_note: event.target.value }))} />
-              <Field label="Clinical source (optional)" type="url" placeholder="https://…" value={form.source_url} onChange={(event) => setForm((current) => ({ ...current, source_url: event.target.value }))} />
             </div>
             <div className="panel p-5">
               <p className="eyebrow">Before Publishing</p>
               <ul className="mt-4 grid gap-4 text-sm leading-6 text-muted">
-                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Keep the language educational and understandable.</span></li>
-                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Do not include patient-identifying information.</span></li>
-                <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Add a safety note when advice has limitations.</span></li>
+                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Keep the language educational and understandable.</span></li>
+                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Do not include patient-identifying information.</span></li>
+                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Use a clear title and explain one health topic at a time.</span></li>
               </ul>
             </div>
             {error ? <p className="error-banner" role="alert">{error}</p> : null}
@@ -113,4 +110,8 @@ export default function CreatePage() {
       </div>
     </>
   );
+}
+
+function initials(name = 'Doctor') {
+  return name.replace(/^Dr\.\s*/i, '').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }

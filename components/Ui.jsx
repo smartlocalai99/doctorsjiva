@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- post media can be a browser blob or user-managed Supabase URL */
-import { ImageIcon, Play, Trash2 } from 'lucide-react';
+import { CalendarDays, Eye, Heart, ImageIcon, MessageCircle, Play, Trash2 } from 'lucide-react';
 
 export function PageHeading({ eyebrow, title, description, action }) {
   return (
@@ -14,45 +14,40 @@ export function PageHeading({ eyebrow, title, description, action }) {
   );
 }
 
-export function StatCard({ label, value, icon: Icon, tone = 'blue' }) {
+export function StatCard({ label, value, icon: Icon, tone = 'blue', detail }) {
   return (
-    <article className="panel min-w-0 p-4 sm:p-5">
-      <span className={`metric-icon metric-${tone}`}><Icon size={19} /></span>
-      <p className="mt-5 text-2xl font-extrabold tabular-nums tracking-tight sm:text-3xl">{formatCount(value)}</p>
-      <p className="mt-1 text-xs font-semibold text-muted sm:text-sm">{label}</p>
+    <article className="dashboard-stat-card">
+      <span className={`metric-icon metric-${tone}`}><Icon aria-hidden="true" size={19} /></span>
+      <div><p>{typeof value === 'number' ? formatCount(value) : value}</p><h3>{label}</h3>{detail ? <span>{detail}</span> : null}</div>
     </article>
   );
 }
 
 export function PostCard({ deleting = false, post, onDelete, variant = 'list' }) {
   return (
-    <article className={`post-card group ${variant === 'grid' ? 'post-card-grid' : 'post-card-list'}`}>
+    <article className={`post-card group post-card-${variant}`}>
       <div className="post-card-media">
         {post.media_url ? (
           post.media_type === 'video' ? <video className="size-full object-cover" src={post.media_url} muted playsInline /> : <img className="size-full object-cover" src={post.media_url} alt="" width="480" height="600" loading="lazy" />
-        ) : post.media_type === 'video' ? <Play size={28} fill="currentColor" /> : <ImageIcon size={28} />}
+        ) : post.media_type === 'video' ? <Play aria-hidden="true" size={28} fill="currentColor" /> : <ImageIcon aria-hidden="true" size={28} />}
       </div>
-      <div className="min-w-0 py-1">
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <Status status={post.status} />
-            <h2 className="mt-2 line-clamp-2 text-sm font-extrabold leading-5 sm:text-base">{post.title}</h2>
-          </div>
-          {onDelete ? (
-            <button className="icon-button shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700" disabled={deleting} type="button" onClick={() => onDelete(post)} aria-label={`Delete ${post.title}`}>
-              <Trash2 aria-hidden="true" size={17} />
-            </button>
-          ) : null}
+      <div className="post-card-content">
+        <div className="post-card-heading">
+          <Status status={post.status} />
+          <span><CalendarDays aria-hidden="true" size={13} /> {formatDate(post.published_at || post.updated_at || post.created_at)}</span>
         </div>
+        <h2>{post.title}</h2>
+        <p>{post.caption}</p>
         {post.status === 'published' ? (
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-muted">
-            <span>{formatCount(post.views_count)} views</span>
-            <span>{formatCount(post.likes_count)} likes</span>
-            <span>{formatCount(post.comments_count)} comments</span>
+          <div className="post-card-metrics" aria-label="Post performance">
+            <span><Eye aria-hidden="true" size={15} /><b>{formatCount(post.views_count)}</b> views</span>
+            <span><Heart aria-hidden="true" size={15} /><b>{formatCount(post.likes_count)}</b> likes</span>
+            <span><MessageCircle aria-hidden="true" size={15} /><b>{formatCount(post.comments_count)}</b> comments</span>
           </div>
         ) : (
-          <p className="mt-4 text-xs text-muted">Archived {formatDate(post.updated_at || post.created_at)}</p>
+          <span className="post-archived-note">This post is not visible in the patient feed.</span>
         )}
+        {onDelete ? <div className="post-card-actions"><button disabled={deleting} type="button" onClick={() => onDelete(post)}><Trash2 aria-hidden="true" size={16} /> {deleting ? 'Deleting…' : 'Delete post'}</button></div> : null}
       </div>
     </article>
   );
@@ -73,7 +68,7 @@ export function Field({ label, hint, textarea = false, className = '', autoCompl
 export function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div className="panel grid place-items-center px-6 py-14 text-center">
-      <span className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand"><Icon size={26} /></span>
+      <span className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand"><Icon aria-hidden="true" size={26} /></span>
       <h2 className="mt-4 text-lg font-extrabold">{title}</h2>
       <p className="mt-2 max-w-sm text-sm leading-6 text-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
