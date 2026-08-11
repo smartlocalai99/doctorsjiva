@@ -1,4 +1,4 @@
-import { FileImage, LayoutDashboard, UserRoundPen } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Heart, LockKeyhole, MessageCircle, Phone, Play } from 'lucide-react';
 import Head from 'next/head';
 import { useState } from 'react';
 
@@ -6,15 +6,18 @@ import { AppLogo } from '@/components/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
-  const { continueWithGoogle, isPreview } = useAuth();
+  const { login } = useAuth();
+  const [phone, setPhone] = useState('9876543210');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const continueToStudio = async () => {
+  const submit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError('');
     try {
-      await continueWithGoogle();
+      await login(phone, code);
     } catch (loginError) {
       setError(loginError.message);
       setLoading(false);
@@ -23,51 +26,48 @@ export default function LoginPage() {
 
   return (
     <>
-      <Head><title>Sign in · DRJIVA Doctors</title></Head>
-      <main className="login-shell">
-        <section className="login-story">
-          <AppLogo />
-          <div className="login-copy">
-            <p className="eyebrow eyebrow-light">Doctor content studio</p>
-            <h1>Your health guidance, made simple.</h1>
-            <p>Create posts, publish short health videos and manage your professional identity from any phone or computer.</p>
+      <Head><title>Doctor login · DRJIVA</title></Head>
+      <main className="social-login-shell">
+        <section className="social-login-visual">
+          <AppLogo inverse />
+          <div className="login-reel" aria-hidden="true">
+            <div className="reel-topic"><span>GUT NOTE 01</span><strong>Listen to what your gut is telling you.</strong><p>Three signs worth discussing with your gastroenterologist.</p></div>
+            <div className="reel-doctor"><span className="reel-avatar">RR</span><div><strong>Dr. Ritish Reddy <BadgeCheck size={14} fill="currentColor" /></strong><small>Gastroenterology · Asian Hospitals</small></div></div>
+            <div className="reel-actions"><span><Heart size={24} fill="white" />3.2K</span><span><MessageCircle size={24} fill="white" />186</span><span><Play size={24} fill="white" />18K</span></div>
           </div>
-          <div className="login-note" aria-hidden="true">
-            <span>HEALTH NOTE / 08.11</span>
-            <strong>Explain one useful thing today.</strong>
-            <div className="note-lines"><i /><i /><i /></div>
-          </div>
+          <p className="login-visual-caption">Create trusted health content that feels native to the way patients watch and learn.</p>
         </section>
 
-        <section className="login-actions">
-          <div className="w-full max-w-md">
+        <section className="social-login-panel">
+          <div className="login-form-wrap">
             <div className="lg:hidden"><AppLogo /></div>
-            <h2>Open your workspace</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">Everything you need to publish and manage DRJIVA health content.</p>
-            <div className="my-8 grid gap-4">
-              <Feature icon={FileImage} title="Create content" text="Upload an image or short video." />
-              <Feature icon={LayoutDashboard} title="Track performance" text="See views, likes and comments." />
-              <Feature icon={UserRoundPen} title="Manage your profile" text="Update your photo, specialty and bio." />
+            <p className="eyebrow mt-10 lg:mt-0">Doctor access</p>
+            <h1>Welcome back.</h1>
+            <p className="login-intro">Use your registered mobile number and four-digit doctor code.</p>
+
+            <form className="mt-8 grid gap-5" onSubmit={submit}>
+              <label className="login-field">
+                <span>Mobile number</span>
+                <div><b>+91</b><Phone size={18} /><input aria-label="Mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} /></div>
+              </label>
+              <label className="login-field">
+                <span>Doctor code</span>
+                <div><LockKeyhole size={18} /><input aria-label="Doctor code" inputMode="numeric" autoComplete="one-time-code" maxLength={4} type="password" placeholder="••••" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} /></div>
+              </label>
+              {error ? <p className="error-banner" role="alert">{error}</p> : null}
+              <button className="primary-button w-full" type="submit" disabled={loading || phone.length !== 10 || code.length !== 4}>
+                {loading ? 'Opening studio…' : 'Continue'} <ArrowRight size={18} />
+              </button>
+            </form>
+
+            <div className="test-access-card">
+              <span>Testing access</span>
+              <p><strong>98765 43210</strong><i />Code <strong>1234</strong></p>
+              <small>Temporary access for Dr. Ritish Reddy</small>
             </div>
-            <button className="google-button" type="button" onClick={continueToStudio} disabled={loading}>
-              <GoogleMark />
-              {loading ? 'Opening Google…' : 'Continue with Google'}
-            </button>
-            <p className="mt-3 text-center text-xs leading-5 text-muted">
-              {isPreview ? 'Preview mode is active—no Google setup is required yet.' : 'Choose the Google account for your doctor workspace.'}
-            </p>
-            {error ? <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700" role="alert">{error}</p> : null}
           </div>
         </section>
       </main>
     </>
   );
-}
-
-function Feature({ icon: Icon, title, text }) {
-  return <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-xl bg-brand-soft text-brand"><Icon size={20} /></span><div><strong className="block text-sm">{title}</strong><span className="text-xs text-muted">{text}</span></div></div>;
-}
-
-function GoogleMark() {
-  return <span className="grid size-6 place-items-center rounded-full border-2 border-[#4285F4] text-sm font-extrabold text-[#4285F4]">G</span>;
 }

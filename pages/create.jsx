@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- this screen previews a local object URL before upload */
-import { FileImage, ImagePlus, Send, ShieldCheck, Video } from 'lucide-react';
+import { BadgeCheck, FileImage, Heart, ImagePlus, MessageCircle, Send, ShieldCheck, Video } from 'lucide-react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +12,7 @@ const initialForm = { title: '', caption: '', hashtags: '', safety_note: '', sou
 export default function CreatePage() {
   const router = useRouter();
   const inputRef = useRef(null);
-  const { savePost } = useWorkspace();
+  const { profile, savePost } = useWorkspace();
   const [mediaType, setMediaType] = useState('image');
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
@@ -58,23 +58,30 @@ export default function CreatePage() {
     <>
       <Head><title>Create post · DRJIVA Doctors</title></Head>
       <div className="page-container">
-        <PageHeading eyebrow="Content studio" title="Create health post" description="Make one useful idea clear, safe and easy to act on." />
+        <PageHeading eyebrow="New post" title="Create for the patient feed" description="Your live preview updates as you shape the post." />
         <div className="composer-grid">
-          <section className="grid gap-5">
+          <section className="social-preview-column">
             <div className="segmented-control" aria-label="Media type">
               <button className={mediaType === 'image' ? 'selected' : ''} type="button" onClick={() => changeType('image')}><FileImage size={18} /> Image</button>
               <button className={mediaType === 'video' ? 'selected' : ''} type="button" onClick={() => changeType('video')}><Video size={18} /> Video</button>
             </div>
 
-            <button className="media-dropzone" type="button" onClick={() => inputRef.current?.click()}>
+            <button className="media-dropzone social-media-preview" type="button" onClick={() => inputRef.current?.click()}>
               {preview ? (
                 mediaType === 'video' ? <video className="size-full object-cover" src={preview} muted loop autoPlay playsInline /> : <img className="size-full object-cover" src={preview} alt="Selected post preview" />
               ) : (
                 <span className="grid place-items-center gap-3 px-5 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-white text-brand shadow-sm"><ImagePlus size={26} /></span><strong>Add {mediaType === 'video' ? 'a short video' : 'a cover image'}</strong><small>Tap to browse · {mediaType === 'video' ? 'MP4 up to 50 MB' : 'JPG, PNG or WebP up to 8 MB'}</small></span>
               )}
+              <span className="composer-preview-overlay">
+                <span className="composer-doctor"><b>RR</b><span><strong>{profile?.display_name || 'Dr. Ritish Reddy'} <BadgeCheck size={12} fill="currentColor" /></strong><small>{profile?.specialty || 'Gastroenterology'}</small></span></span>
+                <span className="composer-caption"><strong>{form.title || 'Your post title appears here'}</strong><small>{form.caption || 'Add a clear caption patients can understand.'}</small></span>
+                <span className="composer-social-actions"><i><Heart size={21} />Like</i><i><MessageCircle size={21} />Comment</i></span>
+              </span>
             </button>
             <input ref={inputRef} className="sr-only" type="file" accept={mediaType === 'video' ? 'video/mp4,video/quicktime' : 'image/jpeg,image/png,image/webp'} onChange={(event) => chooseFile(event.target.files?.[0])} />
+          </section>
 
+          <section className="composer-form-column">
             <div className="panel grid gap-5 p-5 sm:p-6">
               <Field label="Post title" placeholder="Example: 5 stretches for a better morning" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
               <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1200 characters`} />
@@ -82,9 +89,6 @@ export default function CreatePage() {
               <Field label="Safety note" placeholder="Example: Stop if you feel pain and consult your doctor." textarea value={form.safety_note} onChange={(event) => setForm((current) => ({ ...current, safety_note: event.target.value }))} />
               <Field label="Clinical source (optional)" type="url" placeholder="https://…" value={form.source_url} onChange={(event) => setForm((current) => ({ ...current, source_url: event.target.value }))} />
             </div>
-          </section>
-
-          <aside className="composer-aside">
             <div className="panel p-5">
               <p className="eyebrow">Before publishing</p>
               <ul className="mt-4 grid gap-4 text-sm leading-6 text-muted">
@@ -96,7 +100,7 @@ export default function CreatePage() {
             {error ? <p className="error-banner" role="alert">{error}</p> : null}
             <button className="primary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('published')}><Send size={18} /> {saving === 'published' ? 'Publishing…' : 'Publish post'}</button>
             <button className="secondary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('draft')}>{saving === 'draft' ? 'Saving…' : 'Save as draft'}</button>
-          </aside>
+          </section>
         </div>
       </div>
     </>

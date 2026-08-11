@@ -24,10 +24,10 @@ export function StatCard({ label, value, icon: Icon, tone = 'blue' }) {
   );
 }
 
-export function PostCard({ post, onArchive }) {
+export function PostCard({ post, onArchive, variant = 'list' }) {
   return (
-    <article className="group grid grid-cols-[88px_1fr] gap-3 rounded-2xl border border-line bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-[0_12px_35px_rgba(29,57,76,0.08)] sm:grid-cols-[120px_1fr] sm:gap-4">
-      <div className="relative grid aspect-[4/5] place-items-center overflow-hidden rounded-xl bg-media text-brand">
+    <article className={`post-card group ${variant === 'grid' ? 'post-card-grid' : 'post-card-list'}`}>
+      <div className="post-card-media">
         {post.media_url ? (
           post.media_type === 'video' ? <video className="size-full object-cover" src={post.media_url} muted playsInline /> : <img className="size-full object-cover" src={post.media_url} alt="" />
         ) : post.media_type === 'video' ? <Play size={28} fill="currentColor" /> : <ImageIcon size={28} />}

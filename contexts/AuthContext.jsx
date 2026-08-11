@@ -1,9 +1,5 @@
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 
-import { DEMO_DOCTOR_ID } from '@/lib/demo-data';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-
-const PREVIEW_SESSION_KEY = 'drjiva-doctor-preview-session';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -11,56 +7,37 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supabase) {
-      const timer = window.setTimeout(() => {
-        if (localStorage.getItem(PREVIEW_SESSION_KEY) === 'active') {
-          setSession({ user: { id: DEMO_DOCTOR_ID, email: 'doctor@gmail.com' } });
-        }
-        setLoading(false);
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
-
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setSession(data.session);
-        setLoading(false);
-      }
-    });
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
-    });
-    return () => {
-      active = false;
-      data.subscription.unsubscribe();
-    };
+    fetch('/api/auth/session')
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((nextSession) => {
+        if (active) setSession(nextSession);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
   const value = useMemo(
     () => ({
       session,
       loading,
-      isPreview: !isSupabaseConfigured,
-      async continueWithGoogle() {
-        if (!supabase) {
-          localStorage.setItem(PREVIEW_SESSION_KEY, 'active');
-          setSession({ user: { id: DEMO_DOCTOR_ID, email: 'doctor@gmail.com' } });
-          return;
-        }
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: window.location.origin },
+      async login(phone, code) {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, code }),
         });
-        if (error) throw error;
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to sign in.');
+        const nextSession = { doctor: result.doctor, expiresAt: Date.now() + 604800000 };
+        setSession(nextSession);
+        return nextSession;
       },
       async signOut() {
-        if (supabase) {
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-        }
-        localStorage.removeItem(PREVIEW_SESSION_KEY);
+        await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
         setSession(null);
       },
     }),
