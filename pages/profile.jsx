@@ -6,6 +6,7 @@ import {
   Camera,
   CheckCircle2,
   GraduationCap,
+  Loader2,
   LogOut,
   MapPin,
   Phone,
@@ -48,6 +49,7 @@ function ProfileForm({ profile }) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -70,7 +72,7 @@ function ProfileForm({ profile }) {
     setMessage('');
   };
 
-  const chooseAvatar = (file) => {
+  const chooseAvatar = async (file) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setError('Choose a JPG, PNG or WebP profile image.');
@@ -80,12 +82,24 @@ function ProfileForm({ profile }) {
       setError('Choose a profile image below 5 MB.');
       return;
     }
+
+    const previousPreview = preview;
     setPreviewFailed(false);
     setPreview(URL.createObjectURL(file));
-    setForm((current) => ({ ...current, avatar_file: file }));
-    setDirty(true);
     setMessage('');
     setError('');
+    setAvatarSaving(true);
+    try {
+      const saved = await saveProfile({ ...form, avatar_file: file });
+      setForm(normalizeProfile(saved));
+      setPreview(saved.avatar_url || '');
+      setMessage('Profile photo updated.');
+    } catch (saveError) {
+      setPreview(previousPreview);
+      setError(saveError.message);
+    } finally {
+      setAvatarSaving(false);
+    }
   };
 
   const submit = async (event) => {
@@ -112,13 +126,14 @@ function ProfileForm({ profile }) {
   return (
     <form className="doctor-profile-form" onSubmit={submit}>
       <section className="doctor-profile-identity" aria-label="Public doctor identity">
-        <button className="doctor-profile-photo-button" type="button" onClick={() => inputRef.current?.click()} aria-label="Change profile photo">
+        <button className="doctor-profile-photo-button" type="button" disabled={avatarSaving} onClick={() => inputRef.current?.click()} aria-label="Change profile photo">
           <span className="doctor-profile-photo">
             {preview && !previewFailed ? <img src={preview} alt="" width="96" height="96" onError={() => setPreviewFailed(true)} /> : <UserRound aria-hidden="true" size={42} />}
+            {avatarSaving ? <span className="doctor-profile-photo-loading"><Loader2 aria-hidden="true" className="spin" size={22} /></span> : null}
           </span>
           <span className="doctor-profile-camera"><Camera aria-hidden="true" size={15} /></span>
         </button>
-        <input ref={inputRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseAvatar(event.target.files?.[0])} />
+        <input ref={inputRef} hidden disabled={avatarSaving} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseAvatar(event.target.files?.[0])} />
         <div className="doctor-profile-title">
           <div><h2>{form.display_name || 'Doctor'}</h2><BadgeCheck aria-label="Verified doctor" fill="currentColor" size={19} /></div>
           <p>{form.specialty || 'Add your specialty'}</p>
