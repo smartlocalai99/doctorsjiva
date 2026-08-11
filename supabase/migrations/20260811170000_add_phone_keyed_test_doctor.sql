@@ -66,7 +66,7 @@ insert into public.doctors (
   is_active
 )
 values (
-  '+919876543210',
+  '+919866531011',
   'Dr. Ritish Reddy',
   'dr-ritish-reddy',
   'Gastroenterology',
@@ -93,7 +93,7 @@ on conflict (phone_number) do update set
   updated_at = now();
 
 insert into private.doctor_access (phone_number, login_code_hash)
-values ('+919876543210', extensions.crypt('1234', extensions.gen_salt('bf', 10)))
+values ('+919866531011', extensions.crypt('1234', extensions.gen_salt('bf', 10)))
 on conflict (phone_number) do update set
   login_code_hash = excluded.login_code_hash,
   failed_attempts = 0,

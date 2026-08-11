@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [phone, setPhone] = useState('9876543210');
+  const [phone, setPhone] = useState('9866531011');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -61,7 +61,7 @@ export default function LoginPage() {
 
             <div className="test-access-card">
               <span>Testing access</span>
-              <p><strong>98765 43210</strong><i />Code <strong>1234</strong></p>
+              <p><strong>98665 31011</strong><i />Code <strong>1234</strong></p>
               <small>Temporary access for Dr. Ritish Reddy</small>
             </div>
           </div>

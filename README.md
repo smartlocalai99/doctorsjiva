@@ -5,7 +5,7 @@ An installable Next.js PWA for doctors to publish image/video health posts, revi
 ## Test doctor
 
 - Doctor: Dr. Ritish Reddy
-- Mobile: `9876543210`
+- Mobile: `9866531011`
 - Doctor code: `1234`
 - Specialty: Gastroenterology
 - Hospital: Asian Hospitals
