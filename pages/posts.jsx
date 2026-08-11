@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react';
 import { EmptyState, PageHeading, PostCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
-const filters = ['all', 'published', 'draft', 'archived'];
+const filters = ['all', 'published', 'archived'];
 
 export default function PostsPage() {
   const router = useRouter();
@@ -39,9 +39,9 @@ export default function PostsPage() {
     <>
       <Head><title>Posts · DRJIVA Doctors</title></Head>
       <div className="page-container">
-        <PageHeading eyebrow="Library" title="Your health posts" description="Review published guidance, continue drafts and keep your library organised." action={<Link className="primary-button" href="/create"><FilePlus2 size={18} /> New post</Link>} />
+        <PageHeading eyebrow="Library" title="Your Posts" description="Review published guidance and archived content." action={<Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> New Post</Link>} />
 
-        {router.query.created ? <div className="success-banner" role="status">Your post was saved successfully.</div> : null}
+        {router.query.published ? <div className="success-banner" role="status">Published to the patient feed.</div> : null}
         {error ? <div className="error-banner" role="alert">{error}</div> : null}
 
         <section className="panel grid gap-4 p-4 sm:p-5">

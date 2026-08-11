@@ -21,6 +21,13 @@ export default function CreatePage() {
   const [error, setError] = useState('');
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  useEffect(() => {
+    const hasUnsavedWork = Boolean(file || Object.values(form).some((value) => value.trim()));
+    if (!hasUnsavedWork) return undefined;
+    const warnBeforeLeaving = (event) => event.preventDefault();
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [file, form]);
 
   const chooseFile = (selectedFile) => {
     if (!selectedFile) return;
@@ -42,12 +49,14 @@ export default function CreatePage() {
     setPreview('');
   };
 
-  const submit = async (status) => {
-    setSaving(status);
+  const submit = async () => {
+    setSaving('published');
     setError('');
     try {
-      await savePost({ ...form, file, media_type: mediaType, status });
-      await router.push('/posts?created=1');
+      await savePost({ ...form, file, media_type: mediaType, status: 'published' });
+      setFile(null);
+      setForm(initialForm);
+      await router.push('/posts?published=1');
     } catch (saveError) {
       setError(saveError.message);
       setSaving('');
@@ -58,7 +67,7 @@ export default function CreatePage() {
     <>
       <Head><title>Create post · DRJIVA Doctors</title></Head>
       <div className="page-container">
-        <PageHeading eyebrow="New post" title="Create for the patient feed" description="Your live preview updates as you shape the post." />
+        <PageHeading eyebrow="New Post" title="Create for the Patient Feed" description="Your post publishes immediately after the upload finishes." />
         <div className="composer-grid">
           <section className="social-preview-column">
             <div className="segmented-control" aria-label="Media type">
@@ -68,7 +77,7 @@ export default function CreatePage() {
 
             <button className="media-dropzone social-media-preview" type="button" onClick={() => inputRef.current?.click()}>
               {preview ? (
-                mediaType === 'video' ? <video className="size-full object-cover" src={preview} muted loop autoPlay playsInline /> : <img className="size-full object-cover" src={preview} alt="Selected post preview" />
+                mediaType === 'video' ? <video className="size-full object-cover" src={preview} muted loop autoPlay playsInline /> : <img className="size-full object-cover" src={preview} alt="Selected post preview" width="720" height="1120" />
               ) : (
                 <span className="grid place-items-center gap-3 px-5 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-white text-brand shadow-sm"><ImagePlus size={26} /></span><strong>Add {mediaType === 'video' ? 'a short video' : 'a cover image'}</strong><small>Tap to browse · {mediaType === 'video' ? 'MP4 up to 50 MB' : 'JPG, PNG or WebP up to 8 MB'}</small></span>
               )}
@@ -83,14 +92,14 @@ export default function CreatePage() {
 
           <section className="composer-form-column">
             <div className="panel grid gap-5 p-5 sm:p-6">
-              <Field label="Post title" placeholder="Example: 5 stretches for a better morning" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
-              <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1200 characters`} />
-              <Field label="Hashtags" placeholder="#Wellness #MorningRoutine" value={form.hashtags} onChange={(event) => setForm((current) => ({ ...current, hashtags: event.target.value }))} hint="Use up to 10 relevant topics." />
-              <Field label="Safety note" placeholder="Example: Stop if you feel pain and consult your doctor." textarea value={form.safety_note} onChange={(event) => setForm((current) => ({ ...current, safety_note: event.target.value }))} />
+              <Field label="Post Title" placeholder="Example: 3 Signs Your Gut Needs Attention…" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
+              <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1,200 characters`} />
+              <Field label="Hashtags" placeholder="#GutHealth #Gastroenterology…" value={form.hashtags} onChange={(event) => setForm((current) => ({ ...current, hashtags: event.target.value }))} hint="Use up to 10 relevant topics." />
+              <Field label="Safety Note" placeholder="Example: Seek medical care if symptoms persist…" textarea value={form.safety_note} onChange={(event) => setForm((current) => ({ ...current, safety_note: event.target.value }))} />
               <Field label="Clinical source (optional)" type="url" placeholder="https://…" value={form.source_url} onChange={(event) => setForm((current) => ({ ...current, source_url: event.target.value }))} />
             </div>
             <div className="panel p-5">
-              <p className="eyebrow">Before publishing</p>
+              <p className="eyebrow">Before Publishing</p>
               <ul className="mt-4 grid gap-4 text-sm leading-6 text-muted">
                 <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Keep the language educational and understandable.</span></li>
                 <li className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-success" size={19} /><span>Do not include patient-identifying information.</span></li>
@@ -98,8 +107,7 @@ export default function CreatePage() {
               </ul>
             </div>
             {error ? <p className="error-banner" role="alert">{error}</p> : null}
-            <button className="primary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('published')}><Send size={18} /> {saving === 'published' ? 'Publishing…' : 'Publish post'}</button>
-            <button className="secondary-button w-full" type="button" disabled={Boolean(saving)} onClick={() => submit('draft')}>{saving === 'draft' ? 'Saving…' : 'Save as draft'}</button>
+            <button className="primary-button w-full" type="button" disabled={Boolean(saving)} onClick={submit}><Send aria-hidden="true" size={18} /> {saving ? 'Publishing…' : 'Publish Now'}</button>
           </section>
         </div>
       </div>

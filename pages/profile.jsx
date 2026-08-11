@@ -27,12 +27,11 @@ function ProfileForm({ profile }) {
   const [form, setForm] = useState({
     ...profile,
     display_name: profile.display_name || '',
-    username: profile.username || '',
     specialty: profile.specialty || '',
     hospital_name: profile.hospital_name || '',
     experience_years: profile.experience_years || 0,
     qualifications: profile.qualifications || '',
-    registration_number: profile.registration_number || '',
+    city: profile.city || '',
     bio: profile.bio || '',
   });
   const [preview, setPreview] = useState(profile.avatar_url || '');
@@ -76,7 +75,7 @@ function ProfileForm({ profile }) {
     <form className="profile-grid" onSubmit={submit}>
       <aside className="profile-aside">
         <div className="profile-photo-wrap">
-          {preview ? <img className="size-full object-cover" src={preview} alt="Profile preview" /> : <UserRound size={52} />}
+          {preview ? <img className="size-full object-cover" src={preview} alt="Profile preview" width="128" height="128" /> : <UserRound aria-hidden="true" size={52} />}
           <button type="button" onClick={() => inputRef.current?.click()} aria-label="Change profile photo"><Camera size={18} /></button>
         </div>
         <input ref={inputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseAvatar(event.target.files?.[0])} />
@@ -89,14 +88,13 @@ function ProfileForm({ profile }) {
       <section className="panel grid gap-5 p-5 sm:p-7">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Display name" value={form.display_name} onChange={(event) => update('display_name', event.target.value)} placeholder="Dr. Ritish Reddy" />
-          <Field label="Username" value={form.username} onChange={(event) => update('username', event.target.value)} placeholder="dr.ritishreddy" hint="Letters, numbers, underscore and dot only." />
           <Field label="Specialty" value={form.specialty} onChange={(event) => update('specialty', event.target.value)} placeholder="Gastroenterology" />
           <Field label="Qualifications" value={form.qualifications} onChange={(event) => update('qualifications', event.target.value)} placeholder="MBBS, MD" />
           <Field label="Hospital" value={form.hospital_name} onChange={(event) => update('hospital_name', event.target.value)} placeholder="Asian Hospitals" />
           <Field label="Experience (years)" type="number" min="0" max="80" value={form.experience_years} onChange={(event) => update('experience_years', Number(event.target.value))} />
+          <Field label="City" value={form.city} onChange={(event) => update('city', event.target.value)} placeholder="Hyderabad…" />
         </div>
         <Field label="Registered mobile number" value={(form.phone_number || '').replace('+91', '+91 ')} readOnly hint="This number is the doctor account key and cannot be changed here." />
-        <Field label="Medical registration number" value={form.registration_number} onChange={(event) => update('registration_number', event.target.value)} placeholder="Optional for now" />
         <Field label="Professional bio" textarea maxLength={400} value={form.bio} onChange={(event) => update('bio', event.target.value)} placeholder="Tell patients about your experience and approach…" hint={`${form.bio.length}/400 characters`} />
         {message ? <p className="success-banner" role="status">{message}</p> : null}
         {error ? <p className="error-banner" role="alert">{error}</p> : null}

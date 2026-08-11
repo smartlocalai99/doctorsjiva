@@ -75,7 +75,7 @@ values (
   'MBBS, MD, DM – Gastroenterology',
   'Hyderabad',
   'Gastroenterologist focused on digestive health, liver care and practical guidance patients can understand.',
-  2840,
+  0,
   'verified',
   true
 )

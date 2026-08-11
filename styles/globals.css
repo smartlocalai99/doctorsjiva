@@ -21,16 +21,13 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   background: #fafafa;
   color: #121416;
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 button,
@@ -42,6 +39,13 @@ textarea {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 button:focus-visible,
@@ -55,6 +59,10 @@ textarea:focus-visible {
 @layer components {
   .page-container {
     @apply mx-auto grid w-full max-w-[1120px] gap-7 px-4 py-6 sm:gap-9 sm:px-7 sm:py-9 lg:px-10 lg:py-10;
+  }
+
+  .skip-link {
+    @apply fixed left-4 top-3 z-50 -translate-y-20 rounded-lg bg-ink px-4 py-2 text-sm font-bold text-white transition-transform focus:translate-y-0;
   }
 
   .page-title {
@@ -152,10 +160,6 @@ textarea:focus-visible {
 
   .status-published {
     @apply bg-emerald-50 text-emerald-700;
-  }
-
-  .status-draft {
-    @apply bg-amber-50 text-amber-700;
   }
 
   .status-archived {
@@ -520,7 +524,7 @@ textarea:focus-visible {
   }
 
   .doctor-social-card {
-    @apply grid items-center gap-5 rounded-2xl border border-line bg-white p-5 sm:grid-cols-[auto_1fr_auto] sm:p-6;
+    @apply grid grid-cols-[auto_minmax(0,1fr)] items-center gap-5 rounded-2xl border border-line bg-white p-5 sm:grid-cols-[auto_1fr_auto] sm:p-6;
   }
 
   .doctor-story-ring {
@@ -535,6 +539,10 @@ textarea:focus-visible {
 
   .doctor-social-copy h2 {
     @apply flex items-center gap-1.5 text-lg font-extrabold;
+  }
+
+  .doctor-social-copy {
+    @apply min-w-0;
   }
 
   .doctor-social-copy h2 svg {
@@ -581,6 +589,19 @@ textarea:focus-visible {
   .feed-preview-card::before {
     content: '';
     @apply absolute -right-20 top-20 size-72 rounded-full border-[48px] border-white/5;
+  }
+
+  .feed-preview-media,
+  .feed-preview-shade {
+    @apply absolute inset-0 size-full;
+  }
+
+  .feed-preview-media {
+    @apply object-cover;
+  }
+
+  .feed-preview-shade {
+    @apply bg-gradient-to-t from-black/90 via-black/20 to-black/10;
   }
 
   .feed-preview-top {
@@ -720,7 +741,6 @@ textarea:focus-visible {
   *,
   *::before,
   *::after {
-    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

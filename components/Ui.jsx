@@ -29,7 +29,7 @@ export function PostCard({ post, onArchive, variant = 'list' }) {
     <article className={`post-card group ${variant === 'grid' ? 'post-card-grid' : 'post-card-list'}`}>
       <div className="post-card-media">
         {post.media_url ? (
-          post.media_type === 'video' ? <video className="size-full object-cover" src={post.media_url} muted playsInline /> : <img className="size-full object-cover" src={post.media_url} alt="" />
+          post.media_type === 'video' ? <video className="size-full object-cover" src={post.media_url} muted playsInline /> : <img className="size-full object-cover" src={post.media_url} alt="" width="480" height="600" loading="lazy" />
         ) : post.media_type === 'video' ? <Play size={28} fill="currentColor" /> : <ImageIcon size={28} />}
       </div>
       <div className="min-w-0 py-1">
@@ -51,19 +51,20 @@ export function PostCard({ post, onArchive, variant = 'list' }) {
             <span>{formatCount(post.comments_count)} comments</span>
           </div>
         ) : (
-          <p className="mt-4 text-xs text-muted">Saved {formatDate(post.updated_at || post.created_at)}</p>
+          <p className="mt-4 text-xs text-muted">Archived {formatDate(post.updated_at || post.created_at)}</p>
         )}
       </div>
     </article>
   );
 }
 
-export function Field({ label, hint, textarea = false, className = '', ...props }) {
+export function Field({ label, hint, textarea = false, className = '', autoComplete = 'off', name, ...props }) {
   const Input = textarea ? 'textarea' : 'input';
+  const inputName = name || label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
   return (
     <label className={`grid gap-2 ${className}`}>
       <span className="text-sm font-bold text-ink">{label}</span>
-      <Input className={`form-control ${textarea ? 'min-h-28 resize-y' : ''}`} {...props} />
+      <Input autoComplete={autoComplete} className={`form-control ${textarea ? 'min-h-28 resize-y' : ''}`} name={inputName} {...props} />
       {hint ? <span className="text-xs leading-5 text-muted">{hint}</span> : null}
     </label>
   );
@@ -81,7 +82,7 @@ export function EmptyState({ icon: Icon, title, description, action }) {
 }
 
 function Status({ status }) {
-  const labels = { published: 'Published', draft: 'Draft', archived: 'Archived' };
+  const labels = { published: 'Published', archived: 'Archived' };
   return <span className={`status status-${status}`}>{labels[status] || status}</span>;
 }
 

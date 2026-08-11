@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- doctor avatars are user-uploaded URLs and local IndexedDB blob previews */
+/* eslint-disable @next/next/no-img-element -- doctor avatars are user-uploaded Supabase URLs */
 import {
   CircleUserRound,
   FilePlus2,
@@ -67,6 +67,7 @@ function AppShell({ children }) {
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white px-5 py-6 lg:flex">
         <AppLogo />
         <nav className="mt-10 grid gap-2" aria-label="Main navigation">
@@ -98,7 +99,7 @@ function AppShell({ children }) {
         <Link href="/profile" aria-label="Open profile"><Avatar profile={profile} /></Link>
       </header>
 
-      <main className="min-h-dvh pb-24 lg:ml-64 lg:pb-0">{children}</main>
+      <main className="min-h-dvh pb-24 lg:ml-64 lg:pb-0" id="main-content">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
         {navigation.map((item) => <MobileNavItem key={item.href} item={item} currentPath={router.pathname} />)}
@@ -131,7 +132,7 @@ function MobileNavItem({ item, currentPath }) {
 
 function Avatar({ profile }) {
   if (profile?.avatar_url) {
-    return <img className="size-10 rounded-full border border-line object-cover" src={profile.avatar_url} alt="" />;
+    return <img className="size-10 rounded-full border border-line object-cover" src={profile.avatar_url} alt="" width="40" height="40" />;
   }
   return (
     <span className="grid size-10 place-items-center rounded-full border border-line bg-slate-100 text-sm font-extrabold text-slate-600">

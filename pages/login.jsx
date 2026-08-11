@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Heart, LockKeyhole, MessageCircle, Phone, Play } from 'lucide-react';
+import { ArrowRight, BadgeCheck, LockKeyhole, Phone } from 'lucide-react';
 import Head from 'next/head';
 import { useState } from 'react';
 
@@ -27,13 +27,12 @@ export default function LoginPage() {
   return (
     <>
       <Head><title>Doctor login · DRJIVA</title></Head>
-      <main className="social-login-shell">
+      <main className="social-login-shell" id="main-content">
         <section className="social-login-visual">
           <AppLogo inverse />
           <div className="login-reel" aria-hidden="true">
-            <div className="reel-topic"><span>GUT NOTE 01</span><strong>Listen to what your gut is telling you.</strong><p>Three signs worth discussing with your gastroenterologist.</p></div>
+            <div className="reel-topic"><span>DRJIVA DOCTOR STUDIO</span><strong>Publish Clear Health Guidance.</strong><p>Your post moves directly from your studio to the patient feed.</p></div>
             <div className="reel-doctor"><span className="reel-avatar">RR</span><div><strong>Dr. Ritish Reddy <BadgeCheck size={14} fill="currentColor" /></strong><small>Gastroenterology · Asian Hospitals</small></div></div>
-            <div className="reel-actions"><span><Heart size={24} fill="white" />3.2K</span><span><MessageCircle size={24} fill="white" />186</span><span><Play size={24} fill="white" />18K</span></div>
           </div>
           <p className="login-visual-caption">Create trusted health content that feels native to the way patients watch and learn.</p>
         </section>
@@ -42,21 +41,21 @@ export default function LoginPage() {
           <div className="login-form-wrap">
             <div className="lg:hidden"><AppLogo /></div>
             <p className="eyebrow mt-10 lg:mt-0">Doctor access</p>
-            <h1>Welcome back.</h1>
+            <h1>Welcome Back.</h1>
             <p className="login-intro">Use your registered mobile number and four-digit doctor code.</p>
 
             <form className="mt-8 grid gap-5" onSubmit={submit}>
               <label className="login-field">
                 <span>Mobile number</span>
-                <div><b>+91</b><Phone size={18} /><input aria-label="Mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} /></div>
+                <div><b>+91</b><Phone aria-hidden="true" size={18} /><input aria-label="Mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} name="phone" spellCheck={false} value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} /></div>
               </label>
               <label className="login-field">
                 <span>Doctor code</span>
-                <div><LockKeyhole size={18} /><input aria-label="Doctor code" inputMode="numeric" autoComplete="one-time-code" maxLength={4} type="password" placeholder="••••" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} /></div>
+                <div><LockKeyhole aria-hidden="true" size={18} /><input aria-label="Doctor code" inputMode="numeric" autoComplete="one-time-code" maxLength={4} name="doctor_code" spellCheck={false} type="password" placeholder="••••" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} /></div>
               </label>
               {error ? <p className="error-banner" role="alert">{error}</p> : null}
               <button className="primary-button w-full" type="submit" disabled={loading || phone.length !== 10 || code.length !== 4}>
-                {loading ? 'Opening studio…' : 'Continue'} <ArrowRight size={18} />
+                {loading ? 'Signing In…' : 'Sign In'} <ArrowRight aria-hidden="true" size={18} />
               </button>
             </form>
 

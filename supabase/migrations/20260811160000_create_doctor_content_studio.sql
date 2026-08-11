@@ -28,7 +28,7 @@ create table if not exists public.health_posts (
   media_type text not null check (media_type in ('image', 'video')),
   media_path text,
   media_url text not null default '',
-  status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
+  status text not null default 'published' check (status in ('published', 'archived')),
   safety_note text,
   source_url text,
   views_count bigint not null default 0 check (views_count >= 0),
@@ -51,29 +51,29 @@ using (is_active = true);
 
 create policy "Doctors can update their own profile"
 on public.doctor_profiles for update to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
 
 create policy "Doctors can insert their own profile"
 on public.doctor_profiles for insert to authenticated
-with check (auth.uid() = id);
+with check ((select auth.uid()) = id);
 
 create policy "Public can view published posts"
 on public.health_posts for select
-using (status = 'published' or auth.uid() = doctor_id);
+using (status = 'published' or (select auth.uid()) = doctor_id);
 
 create policy "Doctors can create their own posts"
 on public.health_posts for insert to authenticated
-with check (auth.uid() = doctor_id);
+with check ((select auth.uid()) = doctor_id);
 
 create policy "Doctors can update their own posts"
 on public.health_posts for update to authenticated
-using (auth.uid() = doctor_id)
-with check (auth.uid() = doctor_id);
+using ((select auth.uid()) = doctor_id)
+with check ((select auth.uid()) = doctor_id);
 
 create policy "Doctors can delete their own posts"
 on public.health_posts for delete to authenticated
-using (auth.uid() = doctor_id);
+using ((select auth.uid()) = doctor_id);
 
 grant select on public.doctor_profiles, public.health_posts to anon, authenticated;
 grant insert, update on public.doctor_profiles to authenticated;
@@ -124,6 +124,8 @@ create trigger on_auth_user_created_doctor
 after insert on auth.users
 for each row execute function public.handle_new_doctor();
 
+revoke all on function public.handle_new_doctor() from public, anon, authenticated;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
   ('health-feed', 'health-feed', true, 52428800, array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime']),
@@ -135,26 +137,26 @@ on conflict (id) do update set
 
 create policy "Doctors can upload feed media"
 on storage.objects for insert to authenticated
-with check (bucket_id = 'health-feed' and (storage.foldername(name))[1] = auth.uid()::text);
+with check (bucket_id = 'health-feed' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 create policy "Doctors can update feed media"
 on storage.objects for update to authenticated
-using (bucket_id = 'health-feed' and owner_id = auth.uid()::text)
-with check (bucket_id = 'health-feed' and owner_id = auth.uid()::text);
+using (bucket_id = 'health-feed' and owner_id = (select auth.uid())::text)
+with check (bucket_id = 'health-feed' and owner_id = (select auth.uid())::text);
 
 create policy "Doctors can delete feed media"
 on storage.objects for delete to authenticated
-using (bucket_id = 'health-feed' and owner_id = auth.uid()::text);
+using (bucket_id = 'health-feed' and owner_id = (select auth.uid())::text);
 
 create policy "Doctors can upload avatars"
 on storage.objects for insert to authenticated
-with check (bucket_id = 'doctor-avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+with check (bucket_id = 'doctor-avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 create policy "Doctors can update avatars"
 on storage.objects for update to authenticated
-using (bucket_id = 'doctor-avatars' and owner_id = auth.uid()::text)
-with check (bucket_id = 'doctor-avatars' and owner_id = auth.uid()::text);
+using (bucket_id = 'doctor-avatars' and owner_id = (select auth.uid())::text)
+with check (bucket_id = 'doctor-avatars' and owner_id = (select auth.uid())::text);
 
 create policy "Doctors can delete avatars"
 on storage.objects for delete to authenticated
-using (bucket_id = 'doctor-avatars' and owner_id = auth.uid()::text);
+using (bucket_id = 'doctor-avatars' and owner_id = (select auth.uid())::text);

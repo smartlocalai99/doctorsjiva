@@ -1,6 +1,6 @@
 # DRJIVA Doctor Studio
 
-An installable Next.js PWA for doctors to create image/video health posts, publish or save drafts, review engagement, and manage their professional profile. The interface is designed as a mobile-first social creator studio—not an Expo or native app.
+An installable Next.js PWA for doctors to publish image/video health posts, review engagement, and manage their professional profile. New posts publish directly to the DRJIVA patient feed as soon as their media upload finishes.
 
 ## Test doctor
 
@@ -29,7 +29,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Without Supabase values, the test doctor login and browser-persistent content studio work in local preview mode.
+Open `http://localhost:3000`. Supabase configuration is required because doctor profiles, uploads, and posts use the shared DRJIVA backend; the app does not create local demo content.
 
 ## Connect Supabase
 

@@ -12,7 +12,6 @@ const WorkspaceContext = createContext(null);
 
 export function WorkspaceProvider({ children }) {
   const { session } = useAuth();
-  const doctorPhone = session?.doctor?.phone_number;
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +27,7 @@ export function WorkspaceProvider({ children }) {
     setLoading(true);
     setError('');
     try {
-      const workspace = await loadWorkspace(session.doctor);
+      const workspace = await loadWorkspace();
       setProfile(workspace.profile);
       setPosts(workspace.posts);
     } catch (loadError) {
@@ -51,7 +50,7 @@ export function WorkspaceProvider({ children }) {
       error,
       refresh,
       async savePost(input) {
-        const saved = await savePostRecord(input, doctorPhone);
+        const saved = await savePostRecord(input);
         setPosts((current) => {
           const exists = current.some((post) => post.id === saved.id);
           return exists
@@ -74,7 +73,7 @@ export function WorkspaceProvider({ children }) {
         return saved;
       },
     }),
-    [doctorPhone, error, loading, posts, profile, refresh],
+    [error, loading, posts, profile, refresh],
   );
 
   return <WorkspaceContext value={value}>{children}</WorkspaceContext>;
