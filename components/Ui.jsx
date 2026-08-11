@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- post media can be a browser blob or user-managed Supabase URL */
-import { ImageIcon, Play, MoreHorizontal } from 'lucide-react';
+import { ImageIcon, Play, Trash2 } from 'lucide-react';
 
 export function PageHeading({ eyebrow, title, description, action }) {
   return (
@@ -24,7 +24,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'blue' }) {
   );
 }
 
-export function PostCard({ post, onArchive, variant = 'list' }) {
+export function PostCard({ deleting = false, post, onDelete, variant = 'list' }) {
   return (
     <article className={`post-card group ${variant === 'grid' ? 'post-card-grid' : 'post-card-list'}`}>
       <div className="post-card-media">
@@ -38,9 +38,9 @@ export function PostCard({ post, onArchive, variant = 'list' }) {
             <Status status={post.status} />
             <h2 className="mt-2 line-clamp-2 text-sm font-extrabold leading-5 sm:text-base">{post.title}</h2>
           </div>
-          {onArchive ? (
-            <button className="icon-button shrink-0" type="button" onClick={() => onArchive(post)} aria-label={`Archive ${post.title}`}>
-              <MoreHorizontal size={18} />
+          {onDelete ? (
+            <button className="icon-button shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700" disabled={deleting} type="button" onClick={() => onDelete(post)} aria-label={`Delete ${post.title}`}>
+              <Trash2 aria-hidden="true" size={17} />
             </button>
           ) : null}
         </div>

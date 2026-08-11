@@ -8,7 +8,7 @@ export default async function handler(request, response) {
   const session = getDoctorSession(request);
   if (!session) return response.status(401).json({ error: 'Your session expired. Sign in again.' });
   if (request.method === 'POST') return publishPost(request, response, session.doctor.phone_number);
-  if (request.method === 'DELETE') return archivePost(request, response, session.doctor.phone_number);
+  if (request.method === 'DELETE') return deletePost(request, response, session.doctor.phone_number);
   response.setHeader('Allow', 'POST, DELETE');
   return response.status(405).json({ error: 'Method not allowed.' });
 }
@@ -47,22 +47,52 @@ async function publishPost(request, response, phoneNumber) {
   }
 }
 
-async function archivePost(request, response, phoneNumber) {
+async function deletePost(request, response, phoneNumber) {
   const { id } = request.body || {};
   if (!UUID_PATTERN.test(id || '')) return response.status(400).json({ error: 'Invalid post.' });
+
+  const admin = getSupabaseAdmin();
   try {
-    const { data, error } = await getSupabaseAdmin()
+    const { data: post, error: lookupError } = await admin
       .from('health_posts')
-      .update({ status: 'archived' })
+      .select('id, media_path, status')
+      .eq('id', id)
+      .eq('doctor_phone', phoneNumber)
+      .maybeSingle();
+    if (lookupError) throw lookupError;
+    if (!post) return response.status(404).json({ error: 'Post not found.' });
+
+    if (post.status !== 'archived') {
+      const { error: hideError } = await admin
+        .from('health_posts')
+        .update({ status: 'archived' })
+        .eq('id', id)
+        .eq('doctor_phone', phoneNumber);
+      if (hideError) throw hideError;
+    }
+
+    if (post.media_path) {
+      const { error: storageError } = await admin.storage.from('health-feed').remove([post.media_path]);
+      if (storageError) {
+        if (post.status !== 'archived') {
+          await admin.from('health_posts').update({ status: post.status }).eq('id', id).eq('doctor_phone', phoneNumber);
+        }
+        throw storageError;
+      }
+    }
+
+    const { data: deleted, error: deleteError } = await admin
+      .from('health_posts')
+      .delete()
       .eq('id', id)
       .eq('doctor_phone', phoneNumber)
       .select('id')
       .maybeSingle();
-    if (error) throw error;
-    if (!data) return response.status(404).json({ error: 'Post not found.' });
+    if (deleteError) throw deleteError;
+    if (!deleted) return response.status(404).json({ error: 'Post not found.' });
     return response.status(200).json({ ok: true });
   } catch (error) {
-    return response.status(503).json({ error: error.message || 'Unable to archive the post.' });
+    return response.status(503).json({ error: error.message || 'Unable to delete the post and its media.' });
   }
 }
 

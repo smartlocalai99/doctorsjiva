@@ -11,10 +11,11 @@ const filters = ['all', 'published', 'archived'];
 
 export default function PostsPage() {
   const router = useRouter();
-  const { posts, loading, archivePost } = useWorkspace();
+  const { posts, loading, deletePost } = useWorkspace();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState('');
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -25,13 +26,16 @@ export default function PostsPage() {
     });
   }, [filter, posts, query]);
 
-  const archive = async (post) => {
-    if (!window.confirm(`Archive “${post.title}”?`)) return;
+  const remove = async (post) => {
+    if (!window.confirm(`Permanently delete “${post.title}” and its uploaded media? This cannot be undone.`)) return;
     setError('');
+    setDeletingId(post.id);
     try {
-      await archivePost(post.id);
-    } catch (archiveError) {
-      setError(archiveError.message);
+      await deletePost(post.id);
+    } catch (deleteError) {
+      setError(deleteError.message);
+    } finally {
+      setDeletingId('');
     }
   };
 
@@ -62,7 +66,7 @@ export default function PostsPage() {
 
         {loading ? <div className="grid gap-3 xl:grid-cols-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div> : filteredPosts.length ? (
           <div className="posts-social-grid">
-            {filteredPosts.map((post) => <PostCard key={post.id} post={post} variant="grid" onArchive={post.status === 'archived' ? null : archive} />)}
+            {filteredPosts.map((post) => <PostCard deleting={deletingId === post.id} key={post.id} post={post} variant="grid" onDelete={remove} />)}
           </div>
         ) : (
           <EmptyState icon={Archive} title="No matching posts" description="Try another filter or create a new health post." action={<Link className="primary-button" href="/create">Create post</Link>} />

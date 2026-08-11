@@ -1,7 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  archivePost as archivePostRecord,
+  deletePost as deletePostRecord,
   loadWorkspace,
   savePost as savePostRecord,
   saveProfile as saveProfileRecord,
@@ -59,13 +59,9 @@ export function WorkspaceProvider({ children }) {
         });
         return saved;
       },
-      async archivePost(postId) {
-        await archivePostRecord(postId);
-        setPosts((current) =>
-          current.map((post) =>
-            post.id === postId ? { ...post, status: 'archived' } : post,
-          ),
-        );
+      async deletePost(postId) {
+        await deletePostRecord(postId);
+        setPosts((current) => current.filter((post) => post.id !== postId));
       },
       async saveProfile(input) {
         const saved = await saveProfileRecord(input);
