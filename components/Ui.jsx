@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- post media can be a browser blob or user-managed Supabase URL */
-import { CalendarDays, Eye, Heart, ImageIcon, MessageCircle, Play, Trash2 } from 'lucide-react';
+import { Bookmark, CalendarDays, ChevronDown, Eye, Heart, ImageIcon, MessageCircle, Play, Trash2 } from 'lucide-react';
 
 export function PageHeading({ eyebrow, title, description, action }) {
   return (
@@ -23,7 +23,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'blue', detail }) {
   );
 }
 
-export function PostCard({ deleting = false, post, onDelete, variant = 'list' }) {
+export function PostCard({ comments = [], commentsExpanded = false, commentsLoading = false, deleting = false, post, onDelete, onToggleComments, variant = 'list' }) {
   return (
     <article className={`post-card group post-card-${variant}`}>
       <div className="post-card-media">
@@ -39,17 +39,42 @@ export function PostCard({ deleting = false, post, onDelete, variant = 'list' })
         <h2>{post.title}</h2>
         <p>{post.caption}</p>
         {post.status === 'published' ? (
-          <div className="post-card-metrics" aria-label="Post performance">
-            <span><Eye aria-hidden="true" size={15} /><b>{formatCount(post.views_count)}</b> views</span>
-            <span><Heart aria-hidden="true" size={15} /><b>{formatCount(post.likes_count)}</b> likes</span>
-            <span><MessageCircle aria-hidden="true" size={15} /><b>{formatCount(post.comments_count)}</b> comments</span>
-          </div>
+          <>
+            <div className="post-card-metrics" aria-label="Post performance">
+              <span><Eye aria-hidden="true" size={15} /><b>{formatCount(post.views_count)}</b> views</span>
+              <span><Heart aria-hidden="true" size={15} /><b>{formatCount(post.likes_count)}</b> likes</span>
+              <span><MessageCircle aria-hidden="true" size={15} /><b>{formatCount(post.comments_count)}</b> comments</span>
+              <span><Bookmark aria-hidden="true" size={15} /><b>{formatCount(post.saves_count)}</b> saves</span>
+            </div>
+            {onToggleComments && Number(post.comments_count || 0) > 0 ? (
+              <button aria-controls={`post-comments-${post.id}`} aria-expanded={commentsExpanded} className="post-comments-toggle" type="button" onClick={onToggleComments}>
+                <MessageCircle aria-hidden="true" size={15} />
+                {commentsExpanded ? 'Hide patient comments' : `View patient comments (${formatCount(post.comments_count)})`}
+                <ChevronDown aria-hidden="true" className={commentsExpanded ? 'rotate-180' : ''} size={15} />
+              </button>
+            ) : null}
+            {commentsExpanded ? <PostComments comments={comments} id={`post-comments-${post.id}`} loading={commentsLoading} /> : null}
+          </>
         ) : (
           <span className="post-archived-note">This post is not visible in the patient feed.</span>
         )}
         {onDelete ? <div className="post-card-actions"><button disabled={deleting} type="button" onClick={() => onDelete(post)}><Trash2 aria-hidden="true" size={16} /> {deleting ? 'Deleting…' : 'Delete post'}</button></div> : null}
       </div>
     </article>
+  );
+}
+
+function PostComments({ comments, id, loading }) {
+  if (loading) return <div className="post-comments-loading" id={id} role="status">Loading patient comments…</div>;
+  return (
+    <div className="post-comments-list" id={id}>
+      {comments.length ? comments.map((comment) => (
+        <div key={comment.id}>
+          <p><strong>{comment.author_name}</strong><span>{formatDateTime(comment.created_at)}</span></p>
+          <blockquote>{comment.body}</blockquote>
+        </div>
+      )) : <p className="post-comments-empty">No comments are available.</p>}
+    </div>
   );
 }
 
@@ -87,4 +112,8 @@ function formatCount(value = 0) {
 
 function formatDate(value) {
   return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' }).format(new Date(value));
+}
+
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }

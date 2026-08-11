@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 
 import { EmptyState, PageHeading, PostCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { loadPostComments } from '@/lib/repository';
 
 const filters = ['all', 'published', 'archived'];
 
@@ -16,6 +17,9 @@ export default function PostsPage() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [expandedCommentsId, setExpandedCommentsId] = useState('');
+  const [commentsLoadingId, setCommentsLoadingId] = useState('');
+  const [commentsByPost, setCommentsByPost] = useState({});
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -39,6 +43,26 @@ export default function PostsPage() {
     }
   };
 
+  const toggleComments = async (post) => {
+    if (expandedCommentsId === post.id) {
+      setExpandedCommentsId('');
+      return;
+    }
+    setExpandedCommentsId(post.id);
+    if (commentsByPost[post.id]) return;
+    setCommentsLoadingId(post.id);
+    setError('');
+    try {
+      const comments = await loadPostComments(post.id);
+      setCommentsByPost((current) => ({ ...current, [post.id]: comments }));
+    } catch (commentsError) {
+      setExpandedCommentsId('');
+      setError(commentsError.message);
+    } finally {
+      setCommentsLoadingId('');
+    }
+  };
+
   return (
     <>
       <Head><title>Posts · DRJIVA Doctors</title></Head>
@@ -50,9 +74,9 @@ export default function PostsPage() {
 
         <section className="panel grid gap-4 p-4 sm:p-5">
           <label className="search-control">
-            <Search size={18} />
+            <Search aria-hidden="true" size={18} />
             <span className="sr-only">Search posts</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by title or caption" />
+            <input autoComplete="off" name="post_search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title or caption…" />
           </label>
           <div className="filter-row" aria-label="Filter posts">
             {filters.map((item) => (
@@ -66,7 +90,19 @@ export default function PostsPage() {
 
         {loading ? <div className="grid gap-3 xl:grid-cols-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div> : filteredPosts.length ? (
           <div className="content-library-list">
-            {filteredPosts.map((post) => <PostCard deleting={deletingId === post.id} key={post.id} post={post} variant="manage" onDelete={remove} />)}
+            {filteredPosts.map((post) => (
+              <PostCard
+                comments={commentsByPost[post.id] || []}
+                commentsExpanded={expandedCommentsId === post.id}
+                commentsLoading={commentsLoadingId === post.id}
+                deleting={deletingId === post.id}
+                key={post.id}
+                onDelete={remove}
+                onToggleComments={() => void toggleComments(post)}
+                post={post}
+                variant="manage"
+              />
+            ))}
           </div>
         ) : (
           <EmptyState icon={Archive} title="No matching posts" description="Try another filter or create a new health post." action={<Link className="primary-button" href="/create">Create post</Link>} />

@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   BadgeCheck,
   BarChart3,
+  Bookmark,
   ChevronRight,
   Eye,
   FileText,
@@ -28,10 +29,11 @@ export default function DashboardPage() {
       views: result.views + Number(post.views_count || 0),
       likes: result.likes + Number(post.likes_count || 0),
       comments: result.comments + Number(post.comments_count || 0),
+      saves: result.saves + Number(post.saves_count || 0),
     }),
-    { views: 0, likes: 0, comments: 0 },
+    { views: 0, likes: 0, comments: 0, saves: 0 },
   );
-  const interactions = totals.likes + totals.comments;
+  const interactions = totals.likes + totals.comments + totals.saves;
   const engagement = totals.views ? (interactions / totals.views) * 100 : 0;
   const averageViews = published.length ? Math.round(totals.views / published.length) : 0;
   const completedFields = profileFields.filter((field) => Boolean(profile?.[field])).length;
@@ -81,7 +83,8 @@ export default function DashboardPage() {
             <StatCard label="Total views" value={totals.views} icon={Eye} detail={`${formatCount(averageViews)} average per post`} />
             <StatCard label="Likes" value={totals.likes} icon={Heart} tone="rose" detail="Patient appreciation" />
             <StatCard label="Comments" value={totals.comments} icon={MessageCircle} tone="violet" detail="Patient conversations" />
-            <StatCard label="Engagement" value={`${formatPercent(engagement)}%`} icon={BarChart3} tone="green" detail="Likes and comments per view" />
+            <StatCard label="Saves" value={totals.saves} icon={Bookmark} tone="amber" detail="Patients returning later" />
+            <StatCard label="Engagement" value={`${formatPercent(engagement)}%`} icon={BarChart3} tone="green" detail="Likes, comments and saves per view" />
           </div>
         </section>
 
@@ -156,6 +159,7 @@ function PerformancePost({ post }) {
           <span><Eye aria-hidden="true" size={14} /> {formatCount(post.views_count)}</span>
           <span><Heart aria-hidden="true" size={14} /> {formatCount(post.likes_count)}</span>
           <span><MessageCircle aria-hidden="true" size={14} /> {formatCount(post.comments_count)}</span>
+          <span><Bookmark aria-hidden="true" size={14} /> {formatCount(post.saves_count)}</span>
         </div>
       </div>
       <Link href="/posts" aria-label={`Manage ${post.title}`}><ChevronRight aria-hidden="true" size={19} /></Link>
