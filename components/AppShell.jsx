@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- doctor avatars are user-uploaded Supabase URLs */
 import {
+  CalendarHeart,
   CircleUserRound,
   FilePlus2,
   Home,
@@ -19,6 +20,7 @@ const navigation = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/create', label: 'Publish', icon: FilePlus2 },
   { href: '/posts', label: 'Content', icon: PanelsTopLeft },
+  { href: '/camps', label: 'Camps', icon: CalendarHeart },
   { href: '/profile', label: 'Profile', icon: CircleUserRound },
 ];
 
@@ -101,7 +103,7 @@ function AppShell({ children }) {
 
       <main className="min-h-dvh pb-24 lg:ml-64 lg:pb-0" id="main-content">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
         {navigation.map((item) => <MobileNavItem key={item.href} item={item} currentPath={router.pathname} />)}
       </nav>
     </div>
