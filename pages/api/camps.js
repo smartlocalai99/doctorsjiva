@@ -2,7 +2,7 @@ import { getDoctorSession } from '@/lib/server/doctor-session';
 import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const EVENT_TYPES = ['medical', 'dental', 'other'];
+const EVENT_TYPES = ['medical', 'dental'];
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -34,6 +34,7 @@ async function listCamps(request, response, phoneNumber) {
       .from('hospital_events')
       .select('id, title, event_type, doctor_name, description, event_date, start_time, end_time, location, created_at')
       .eq('hospital_name', doctor.hospital_name)
+      .eq('doctor_name', doctor.display_name)
       .order('event_date', { ascending: false })
       .limit(100);
     if (error) throw error;
@@ -92,6 +93,7 @@ async function deleteCamp(request, response, phoneNumber) {
       .delete()
       .eq('id', id)
       .eq('hospital_name', doctor.hospital_name)
+      .eq('doctor_name', doctor.display_name)
       .select('id')
       .maybeSingle();
     if (error) throw error;

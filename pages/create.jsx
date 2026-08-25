@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- this screen previews a local object URL before upload */
-import { BadgeCheck, FileImage, Heart, ImagePlus, MessageCircle, Send, ShieldCheck, Video } from 'lucide-react';
+import { BadgeCheck, FileImage, Heart, ImagePlus, MessageCircle, Send, Video } from 'lucide-react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
@@ -95,14 +95,7 @@ export default function CreatePage() {
               <Field label="Post Title" placeholder="Example: 3 Signs Your Gut Needs Attention…" maxLength={90} value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} hint={`${form.title.length}/90 characters`} />
               <Field label="Caption" placeholder="Explain the guidance in simple language…" maxLength={1200} textarea value={form.caption} onChange={(event) => setForm((current) => ({ ...current, caption: event.target.value }))} hint={`${form.caption.length}/1,200 characters`} />
             </div>
-            <div className="panel p-5">
-              <p className="eyebrow">Before Publishing</p>
-              <ul className="mt-4 grid gap-4 text-sm leading-6 text-muted">
-                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Keep the language educational and understandable.</span></li>
-                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Do not include patient-identifying information.</span></li>
-                <li className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-success" size={19} /><span>Use a clear title and explain one health topic at a time.</span></li>
-              </ul>
-            </div>
+
             {error ? <p className="error-banner" role="alert">{error}</p> : null}
             <button className="primary-button w-full" type="button" disabled={Boolean(saving)} onClick={submit}><Send aria-hidden="true" size={18} /> {saving ? 'Publishing…' : 'Publish Now'}</button>
           </section>

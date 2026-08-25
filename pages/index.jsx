@@ -1,10 +1,7 @@
-/* eslint-disable @next/next/no-img-element -- doctor media and avatars are user-managed Supabase URLs */
 import {
   ArrowUpRight,
   Bookmark,
-  ChevronRight,
   Eye,
-  FileText,
   Heart,
   MessageCircle,
   Plus,
@@ -13,13 +10,13 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { EmptyState, StatCard } from '@/components/Ui';
+import { StatCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 const activityRanges = ['Today', '7D', '30D'];
 
 export default function DashboardPage() {
-  const { analytics, posts, loading, error, refresh, refreshAnalytics } = useWorkspace();
+  const { analytics, posts, error, refresh, refreshAnalytics } = useWorkspace();
   const [activityRange, setActivityRange] = useState('7D');
   useEffect(() => { void refreshAnalytics(); }, [refreshAnalytics]);
   const published = posts.filter((post) => post.status === 'published');
@@ -33,7 +30,6 @@ export default function DashboardPage() {
     { views: 0, likes: 0, comments: 0, saves: 0 },
   );
   const averageViews = published.length ? Math.round(totals.views / published.length) : 0;
-  const recentPosts = published.slice(0, 4);
 
   return (
     <>
@@ -56,23 +52,6 @@ export default function DashboardPage() {
           </div>
           <Link className="dashboard-create-cta primary-button" href="/create"><Plus aria-hidden="true" size={20} /> Create a post <ArrowUpRight aria-hidden="true" size={18} /></Link>
         </section>
-
-        <div className="dashboard-content-grid">
-          <section className="dashboard-content-panel" aria-labelledby="recent-heading">
-            <div className="dashboard-panel-heading">
-              <div><p>Content library</p><h2 id="recent-heading">Recent posts</h2></div>
-              <Link href="/posts">Manage all <ArrowUpRight aria-hidden="true" size={16} /></Link>
-            </div>
-            {loading ? <LoadingRows /> : recentPosts.length ? (
-              <div className="dashboard-post-list">
-                {recentPosts.map((post) => <PerformancePost key={post.id} post={post} />)}
-              </div>
-            ) : (
-              <EmptyState icon={FileText} title="Your content library is ready" description="Publish your first health update to start building reach with patients." action={<Link className="primary-button" href="/create">Create first post</Link>} />
-            )}
-          </section>
-
-        </div>
       </div>
     </>
   );
@@ -147,47 +126,6 @@ function bucketEvents(events, getBucket, length, now, today = false) {
   }, Array.from({ length }, () => 0));
 }
 
-function PerformancePost({ post }) {
-  return (
-    <article className="performance-post">
-      <div className="performance-post-media">
-        {post.media_url ? (
-          post.media_type === 'video' ? <video src={post.media_url} muted playsInline /> : <img src={post.media_url} alt="" width="112" height="112" loading="lazy" />
-        ) : <FileText aria-hidden="true" size={24} />}
-      </div>
-      <div className="performance-post-copy">
-        <div><span>Published {formatDate(post.published_at || post.created_at)}</span><h3>{post.title}</h3></div>
-        <div className="performance-post-metrics" aria-label="Post performance">
-          <span><Eye aria-hidden="true" size={14} /> {formatCount(post.views_count)}</span>
-          <span><Heart aria-hidden="true" size={14} /> {formatCount(post.likes_count)}</span>
-          <span><MessageCircle aria-hidden="true" size={14} /> {formatCount(post.comments_count)}</span>
-          <span><Bookmark aria-hidden="true" size={14} /> {formatCount(post.saves_count)}</span>
-        </div>
-      </div>
-      <Link href="/posts" aria-label={`Manage ${post.title}`}><ChevronRight aria-hidden="true" size={19} /></Link>
-    </article>
-  );
-}
-
-function DoctorAvatar({ profile, compact = false }) {
-  const className = compact ? 'doctor-avatar doctor-avatar-compact' : 'doctor-avatar';
-  if (profile?.avatar_url) return <span className={className}><img src={profile.avatar_url} alt="" width="96" height="96" /></span>;
-  return <span className={className}><b>{initials(profile?.display_name)}</b></span>;
-}
-
-function initials(name = 'Doctor') {
-  return name.replace(/^Dr\.\s*/i, '').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-}
-
 function formatCount(value = 0) {
   return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
-}
-
-function formatDate(value) {
-  if (!value) return 'recently';
-  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' }).format(new Date(value));
-}
-
-function LoadingRows() {
-  return <div className="dashboard-post-list" aria-label="Loading recent posts">{[1, 2, 3].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-slate-100" />)}</div>;
 }
