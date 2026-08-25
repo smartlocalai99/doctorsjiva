@@ -507,6 +507,10 @@ textarea:focus-visible {
     @apply relative;
   }
 
+  .app-login-field > .pin-input-wrap {
+    @apply min-h-0 border-0 bg-transparent p-0;
+  }
+
   .pin-cells {
     @apply flex min-w-0 flex-1 gap-3;
   }

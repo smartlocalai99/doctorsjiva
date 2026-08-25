@@ -26,7 +26,7 @@ export default async function handler(request, response) {
       return response.status(200).json({ analytics: { likes: likesResult.data || [], views: viewsResult.data || [] } });
     }
     const [profileResult, postsResult] = await Promise.all([
-      admin.from('doctors').select('id, phone_number, display_name, specialty, qualifications, hospital_name, experience_years, city, bio, avatar_url, avatar_path, follower_count').eq('phone_number', session.doctor.phone_number).single(),
+      admin.from('doctors').select('phone_number, display_name, specialty, qualifications, hospital_name, experience_years, city, bio, avatar_url, follower_count').eq('phone_number', session.doctor.phone_number).single(),
       admin.from('health_posts').select('id, title, caption, media_url, media_type, status, published_at, updated_at, created_at, views_count, likes_count, comments_count, saves_count').eq('doctor_phone', session.doctor.phone_number).order('created_at', { ascending: false }),
     ]);
     if (profileResult.error) throw profileResult.error;
