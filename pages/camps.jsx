@@ -1,5 +1,6 @@
 import { CalendarPlus, Clock3, House, MapPin, Plus, Send, Smile, Stethoscope, Trash2, X } from 'lucide-react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { EmptyState, Field, PageHeading } from '@/components/Ui';
@@ -26,6 +27,7 @@ const TYPE_DETAILS = {
 };
 
 export default function CampsPage() {
+  const router = useRouter();
   const [form, setForm] = useState(initialForm);
   const [camps, setCamps] = useState([]);
   const [hospitalName, setHospitalName] = useState('');
@@ -35,6 +37,8 @@ export default function CampsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const isCreateRoute = router.query.create === '1';
+  const isFormVisible = isFormOpen || isCreateRoute;
 
   const refresh = () => {
     setLoading(true);
@@ -77,6 +81,7 @@ export default function CampsPage() {
       setForm(initialForm);
       setMessage('Camp published to the patient app.');
       setIsFormOpen(false);
+      if (isCreateRoute) void router.replace('/camps', undefined, { shallow: true });
       refresh();
     } catch (saveError) {
       setError(saveError.message);
@@ -108,17 +113,18 @@ export default function CampsPage() {
           action={(
             <button
               aria-controls="publish-camp-form"
-              aria-expanded={isFormOpen}
-              className={isFormOpen ? 'secondary-button' : 'primary-button'}
+              aria-expanded={isFormVisible}
+              className={isFormVisible ? 'secondary-button' : 'primary-button'}
               type="button"
               onClick={() => {
-                setIsFormOpen((current) => !current);
+                if (isCreateRoute) void router.replace('/camps', undefined, { shallow: true });
+                setIsFormOpen(!isFormVisible);
                 setError('');
                 setMessage('');
               }}
             >
-              {isFormOpen ? <X aria-hidden="true" size={18} /> : <Plus aria-hidden="true" size={18} />}
-              {isFormOpen ? 'Close form' : 'Publish a camp'}
+              {isFormVisible ? <X aria-hidden="true" size={18} /> : <Plus aria-hidden="true" size={18} />}
+              {isFormVisible ? 'Close form' : 'Publish a camp'}
             </button>
           )}
         />
@@ -126,8 +132,8 @@ export default function CampsPage() {
         {error ? <p className="error-banner" role="alert">{error}</p> : null}
         {message ? <p className="success-banner" role="status">{message}</p> : null}
 
-        <div className={isFormOpen ? 'composer-grid' : ''}>
-          {isFormOpen ? (
+        <div className={isFormVisible ? 'composer-grid' : ''}>
+          {isFormVisible ? (
             <section className="composer-form-column" id="publish-camp-form">
               <form className="panel grid gap-5 p-5 sm:p-6" onSubmit={submit}>
                 <div className="segmented-control" aria-label="Camp type">
@@ -214,10 +220,10 @@ export default function CampsPage() {
                 icon={House}
                 title="No camps published"
                 description="Your published medical and dental camps will appear here."
-                action={!isFormOpen ? <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}><Plus aria-hidden="true" size={18} /> Publish your first camp</button> : null}
+                action={!isFormVisible ? <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}><Plus aria-hidden="true" size={18} /> Publish your first camp</button> : null}
               />
             ) : (
-              <div className={isFormOpen ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
+              <div className={isFormVisible ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
                 {camps.map((camp) => (
                   <article className="panel grid gap-4 p-4" key={camp.id}>
                     <div className="flex items-start justify-between gap-4">

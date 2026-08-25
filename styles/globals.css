@@ -1059,8 +1059,12 @@ textarea:focus-visible {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
+  .dashboard-create-actions {
+    @apply mt-6 grid gap-3 sm:grid-cols-2;
+  }
+
   .dashboard-create-cta {
-    @apply mt-6 min-h-14 w-full justify-between rounded-xl px-5 text-base;
+    @apply min-h-14 w-full justify-between rounded-xl px-5 text-base;
   }
 
   .dashboard-content-grid {

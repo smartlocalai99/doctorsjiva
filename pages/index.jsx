@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Bookmark,
+  CalendarPlus,
   Eye,
   Heart,
   MessageCircle,
@@ -50,7 +51,10 @@ export default function DashboardPage() {
             <StatCard label="Comments" value={totals.comments} icon={MessageCircle} tone="violet" detail="Patient conversations" />
             <StatCard label="Saves" value={totals.saves} icon={Bookmark} tone="amber" detail="Patients returning later" />
           </div>
-          <Link className="dashboard-create-cta primary-button" href="/create"><Plus aria-hidden="true" size={20} /> Create a post <ArrowUpRight aria-hidden="true" size={18} /></Link>
+          <div className="dashboard-create-actions">
+            <Link className="dashboard-create-cta primary-button" href="/create"><Plus aria-hidden="true" size={20} /> Create a post <ArrowUpRight aria-hidden="true" size={18} /></Link>
+            <Link className="dashboard-create-cta secondary-button" href="/camps?create=1"><CalendarPlus aria-hidden="true" size={20} /> Create a camp <ArrowUpRight aria-hidden="true" size={18} /></Link>
+          </div>
         </section>
       </div>
     </>
