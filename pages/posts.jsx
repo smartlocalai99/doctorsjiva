@@ -96,7 +96,7 @@ export default function PostsPage() {
           </div>
         </section>
 
-        {loading ? <div className="grid gap-3 xl:grid-cols-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div> : filteredPosts.length ? (
+        {loading ? <div className="content-library-list">{[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="aspect-square animate-pulse rounded-xl bg-slate-200" />)}</div> : filteredPosts.length ? (
           <div className="content-library-list">
             {filteredPosts.map((post) => (
               <PostCard
@@ -108,7 +108,7 @@ export default function PostsPage() {
                 onDelete={remove}
                 onToggleComments={() => void toggleComments(post)}
                 post={post}
-                variant="manage"
+                variant="grid"
               />
             ))}
           </div>

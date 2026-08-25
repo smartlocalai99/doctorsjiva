@@ -1439,7 +1439,7 @@ textarea:focus-visible {
   }
 
   .content-library-list {
-    @apply grid gap-3 sm:grid-cols-2;
+    @apply grid grid-cols-3 gap-2 sm:gap-3;
   }
 
   .content-profile-header {
@@ -1473,6 +1473,8 @@ textarea:focus-visible {
 
   .content-profile-verified {
     @apply shrink-0 text-brand;
+    fill: #2e7ebc;
+    stroke: white;
   }
 
   .content-profile-specialty {
@@ -1489,6 +1491,62 @@ textarea:focus-visible {
 
   .content-profile-stats strong {
     @apply font-extrabold text-ink;
+  }
+
+  .post-card-grid {
+    @apply min-w-0;
+  }
+
+  .post-card-grid .post-card-media {
+    @apply rounded-none;
+  }
+
+  .post-card-grid .post-card-content {
+    @apply min-w-0 p-2 sm:p-3;
+  }
+
+  .post-card-grid .post-card-heading {
+    @apply gap-1;
+  }
+
+  .post-card-grid .post-card-heading .status {
+    @apply px-1.5 py-0.5 text-[8px];
+  }
+
+  .post-card-grid .post-card-heading > span:last-child {
+    @apply hidden;
+  }
+
+  .post-card-grid .post-card-content > h2 {
+    @apply mt-1 line-clamp-2 text-xs leading-4 sm:text-sm;
+  }
+
+  .post-card-grid .post-card-content > p {
+    @apply hidden;
+  }
+
+  .post-card-grid .post-card-metrics {
+    @apply mt-2 grid grid-cols-3 gap-1 text-[9px] sm:text-[10px];
+  }
+
+  .post-card-grid .post-card-metrics span {
+    @apply min-w-0 gap-0.5;
+  }
+
+  .post-card-grid .post-card-metrics span:nth-child(3) {
+    @apply hidden;
+  }
+
+  .post-card-grid .post-card-metrics span:nth-child(4) {
+    @apply flex;
+  }
+
+  .post-card-grid .post-card-actions {
+    @apply mt-2 pt-2;
+  }
+
+  .post-card-grid .post-comments-toggle {
+    @apply min-h-8 max-w-full overflow-hidden px-2 text-[9px];
   }
 
   .post-card-manage {
