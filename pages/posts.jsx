@@ -1,35 +1,44 @@
 /* eslint-disable @next/next/no-img-element -- the profile avatar is a user-managed Supabase URL */
-import { Archive, BadgeCheck, Search } from 'lucide-react';
+import { Archive, BadgeCheck, CalendarDays, Grid3X3, Stethoscope, Video } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { EmptyState, PostCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { loadPostComments } from '@/lib/repository';
+import { loadCamps, loadPostComments } from '@/lib/repository';
 
-const filters = ['all', 'published', 'archived'];
+const contentTabs = [
+  { key: 'posts', label: 'Posts', icon: Grid3X3 },
+  { key: 'reels', label: 'Reels', icon: Video },
+  { key: 'camps', label: 'Medical camps', icon: Stethoscope },
+];
 
 export default function PostsPage() {
   const router = useRouter();
   const { posts, profile, loading, deletePost } = useWorkspace();
-  const [filter, setFilter] = useState('all');
-  const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [expandedCommentsId, setExpandedCommentsId] = useState('');
   const [commentsLoadingId, setCommentsLoadingId] = useState('');
   const [commentsByPost, setCommentsByPost] = useState({});
+  const [activeTab, setActiveTab] = useState('reels');
+  const [camps, setCamps] = useState([]);
+  const [campsLoaded, setCampsLoaded] = useState(false);
 
-  const filteredPosts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return posts.filter((post) => {
-      const matchesStatus = filter === 'all' || post.status === filter;
-      const matchesQuery = !normalizedQuery || `${post.title} ${post.caption}`.toLowerCase().includes(normalizedQuery);
-      return matchesStatus && matchesQuery;
-    });
-  }, [filter, posts, query]);
+  const filteredPosts = posts.filter((post) => {
+    if (activeTab === 'reels') return post.media_type === 'video';
+    return post.media_type !== 'video';
+  });
+
+  useEffect(() => {
+    if (activeTab !== 'camps' || camps.length) return;
+    loadCamps()
+      .then((result) => setCamps(result.camps || []))
+      .catch((loadError) => setError(loadError.message))
+      .finally(() => setCampsLoaded(true));
+  }, [activeTab, camps.length]);
 
   const remove = async (post) => {
     if (!window.confirm(`Permanently delete “${post.title}” and its uploaded media? This cannot be undone.`)) return;
@@ -80,23 +89,11 @@ export default function PostsPage() {
         {router.query.published ? <div className="success-banner" role="status">Published to the patient feed.</div> : null}
         {error ? <div className="error-banner" role="alert">{error}</div> : null}
 
-        <section className="panel grid gap-4 p-4 sm:p-5">
-          <label className="search-control">
-            <Search aria-hidden="true" size={18} />
-            <span className="sr-only">Search posts</span>
-            <input autoComplete="off" name="post_search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title or caption…" />
-          </label>
-          <div className="filter-row" aria-label="Filter posts">
-            {filters.map((item) => (
-              <button key={item} type="button" className={filter === item ? 'selected' : ''} onClick={() => setFilter(item)}>
-                {item[0].toUpperCase() + item.slice(1)}
-                <span>{item === 'all' ? posts.length : posts.filter((post) => post.status === item).length}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <nav className="content-tab-bar" aria-label="Content type">
+          {contentTabs.map(({ key, label, icon: Icon }) => <button className={activeTab === key ? 'selected' : ''} key={key} type="button" onClick={() => setActiveTab(key)}><Icon aria-hidden="true" size={20} /><span>{label}</span></button>)}
+        </nav>
 
-        {loading ? <div className="content-library-list">{[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="aspect-square animate-pulse rounded-xl bg-slate-200" />)}</div> : filteredPosts.length ? (
+        {activeTab === 'camps' ? <CampGrid camps={camps} loading={!campsLoaded} /> : loading ? <div className="content-library-list">{[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="aspect-square animate-pulse rounded-xl bg-slate-200" />)}</div> : filteredPosts.length ? (
           <div className="content-library-list">
             {filteredPosts.map((post) => (
               <PostCard
@@ -108,7 +105,7 @@ export default function PostsPage() {
                 onDelete={remove}
                 onToggleComments={() => void toggleComments(post)}
                 post={post}
-                variant="grid"
+                variant={activeTab === 'reels' ? 'reel-grid' : 'grid'}
               />
             ))}
           </div>
@@ -118,6 +115,12 @@ export default function PostsPage() {
       </div>
     </>
   );
+}
+
+function CampGrid({ camps, loading }) {
+  if (loading) return <div className="content-library-list">{[1, 2, 3].map((item) => <div key={item} className="aspect-square animate-pulse rounded-xl bg-slate-200" />)}</div>;
+  if (!camps.length) return <EmptyState icon={Stethoscope} title="No medical camps yet" description="Published camps will appear here for quick review." />;
+  return <div className="content-library-list">{camps.map((camp) => <article className="camp-grid-card" key={camp.id}><div className="camp-grid-media"><Stethoscope aria-hidden="true" size={34} /></div><div className="camp-grid-copy"><span><CalendarDays aria-hidden="true" size={13} /> {camp.event_date}</span><h2>{camp.title}</h2><p>{camp.location || camp.hospital_name}</p></div></article>)}</div>;
 }
 
 function initials(name = 'Doctor') {

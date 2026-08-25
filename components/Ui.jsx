@@ -32,6 +32,7 @@ export function PostCard({ comments = [], commentsExpanded = false, commentsLoad
         {post.media_url ? (
           post.media_type === 'video' ? <video className="size-full object-cover" src={post.media_url} muted playsInline /> : <img className="size-full object-cover" src={post.media_url} alt="" width="480" height="600" loading="lazy" />
         ) : post.media_type === 'video' ? <Play aria-hidden="true" size={28} fill="currentColor" /> : <ImageIcon aria-hidden="true" size={28} />}
+        {variant === 'reel-grid' ? <div className="reel-grid-analytics" aria-label={`${formatCount(post.views_count)} views, ${formatCount(post.likes_count)} likes, ${formatCount(post.saves_count)} saves`}><span><Eye aria-hidden="true" size={13} /> {formatCount(post.views_count)}</span><span><Heart aria-hidden="true" size={13} /> {formatCount(post.likes_count)}</span><span><Bookmark aria-hidden="true" size={13} /> {formatCount(post.saves_count)}</span></div> : null}
       </div>
       <div className="post-card-content">
         <div className="post-card-heading">

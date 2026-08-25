@@ -1493,12 +1493,77 @@ textarea:focus-visible {
     @apply font-extrabold text-ink;
   }
 
+  .content-tab-bar {
+    @apply grid grid-cols-3 border-b border-line;
+  }
+
+  .content-tab-bar button {
+    @apply relative flex min-h-14 items-center justify-center gap-2 text-xs font-extrabold text-muted transition hover:text-ink;
+  }
+
+  .content-tab-bar button.selected {
+    @apply text-brand;
+  }
+
+  .content-tab-bar button.selected::after {
+    content: '';
+    @apply absolute inset-x-5 bottom-0 h-0.5 rounded-full bg-brand;
+  }
+
+  .content-tab-bar button span {
+    @apply hidden sm:inline;
+  }
+
+  .camp-grid-card {
+    @apply min-w-0 overflow-hidden rounded-xl border border-line bg-white;
+  }
+
+  .camp-grid-media {
+    @apply grid aspect-square place-items-center bg-brand-soft text-brand;
+  }
+
+  .camp-grid-copy {
+    @apply min-w-0 p-2.5 sm:p-3;
+  }
+
+  .camp-grid-copy > span {
+    @apply flex items-center gap-1 text-[9px] font-bold text-muted;
+  }
+
+  .camp-grid-copy h2 {
+    @apply mt-1 line-clamp-2 text-xs font-extrabold leading-4 text-ink sm:text-sm;
+  }
+
+  .camp-grid-copy p {
+    @apply mt-1 truncate text-[10px] text-muted;
+  }
+
   .post-card-grid {
     @apply min-w-0;
   }
 
   .post-card-grid .post-card-media {
     @apply rounded-none;
+  }
+
+  .post-card-reel-grid {
+    @apply overflow-hidden rounded-none border-0;
+  }
+
+  .post-card-reel-grid .post-card-media {
+    @apply aspect-square rounded-none;
+  }
+
+  .reel-grid-analytics {
+    @apply absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/65 px-2 py-1.5 text-[9px] font-bold text-white;
+  }
+
+  .reel-grid-analytics span {
+    @apply flex min-w-0 items-center gap-1;
+  }
+
+  .post-card-reel-grid .post-card-content {
+    @apply hidden;
   }
 
   .post-card-grid .post-card-content {
