@@ -14,10 +14,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pinInputRef = useRef(null);
+  const formRef = useRef(null);
 
   useEffect(() => {
     if (phone.length === 10) pinInputRef.current?.focus();
   }, [phone]);
+
+  useEffect(() => {
+    if (phone.length === 10 && code.length === 4 && !loading) formRef.current?.requestSubmit();
+  }, [code, loading, phone]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -51,7 +56,7 @@ export default function LoginPage() {
             <span>Sign in to continue to your doctor studio.</span>
           </div>
 
-          <form className="app-login-form" onSubmit={submit}>
+          <form ref={formRef} className="app-login-form" onSubmit={submit}>
             <label className="app-login-field">
               <span>Mobile number</span>
               <div><span className="india-flag" role="img" aria-label="India">🇮🇳</span><input aria-label="Mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} name="phone" spellCheck={false} value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} /></div>

@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- the profile avatar is a user-managed Supabase URL */
-import { Archive, FilePlus2, Search } from 'lucide-react';
+import { Archive, BadgeCheck, Search } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -71,9 +71,9 @@ export default function PostsPage() {
         <header className="content-profile-header">
           <span className="content-profile-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : initials(profile?.display_name)}</span>
           <div className="content-profile-copy">
-            <div className="content-profile-title"><div><p>Doctor studio</p><h1>{profile?.display_name || 'Your content'}</h1></div><Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> Create post</Link></div>
+            <div className="content-profile-title"><div><p>Doctor studio</p><h1>{profile?.display_name || 'Your content'} <BadgeCheck aria-label="Verified doctor" className="content-profile-verified" fill="currentColor" size={20} /></h1></div></div>
             <p className="content-profile-specialty">{profile?.specialty || 'Health education'}{profile?.hospital_name ? ` · ${profile.hospital_name}` : ''}</p>
-            <div className="content-profile-stats"><span><strong>{posts.length}</strong> posts</span><span><strong>{posts.filter((post) => post.status === 'published').length}</strong> published</span><span><strong>{formatCount(posts.reduce((total, post) => total + Number(post.views_count || 0), 0))}</strong> views</span></div>
+            <div className="content-profile-stats"><span><strong>{formatCount(posts.reduce((total, post) => total + Number(post.views_count || 0), 0))}</strong> views</span><span><strong>{formatCount(posts.reduce((total, post) => total + Number(post.likes_count || 0), 0))}</strong> likes</span><span><strong>{formatCount(posts.reduce((total, post) => total + Number(post.saves_count || 0), 0))}</strong> saves</span></div>
           </div>
         </header>
 

@@ -143,6 +143,11 @@ textarea:focus-visible {
     @apply min-h-11 justify-center;
   }
 
+  .app-mobile-nav {
+    min-height: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: max(0.55rem, env(safe-area-inset-bottom));
+  }
+
   .profile-account-link {
     min-height: 44px;
   }
@@ -1462,8 +1467,12 @@ textarea:focus-visible {
   }
 
   .content-profile-title h1 {
-    @apply mt-1 truncate text-2xl font-extrabold tracking-[-0.04em] text-ink sm:text-3xl;
+    @apply mt-1 flex items-center gap-1.5 truncate text-2xl font-extrabold tracking-[-0.04em] text-ink sm:text-3xl;
     font-family: var(--font-display), ui-serif, Georgia, serif;
+  }
+
+  .content-profile-verified {
+    @apply shrink-0 text-brand;
   }
 
   .content-profile-specialty {
