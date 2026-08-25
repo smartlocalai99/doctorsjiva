@@ -1,10 +1,11 @@
+/* eslint-disable @next/next/no-img-element -- the profile avatar is a user-managed Supabase URL */
 import { Archive, FilePlus2, Search } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 
-import { EmptyState, PageHeading, PostCard } from '@/components/Ui';
+import { EmptyState, PostCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { loadPostComments } from '@/lib/repository';
 
@@ -12,7 +13,7 @@ const filters = ['all', 'published', 'archived'];
 
 export default function PostsPage() {
   const router = useRouter();
-  const { posts, loading, deletePost } = useWorkspace();
+  const { posts, profile, loading, deletePost } = useWorkspace();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
@@ -67,7 +68,14 @@ export default function PostsPage() {
     <>
       <Head><title>Posts · DRJIVA Doctors</title></Head>
       <div className="page-container">
-        <PageHeading eyebrow="Content library" title="Manage your posts" description="Review reach, find published guidance, and permanently delete content you no longer want in the patient feed." action={<Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> Create post</Link>} />
+        <header className="content-profile-header">
+          <span className="content-profile-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : initials(profile?.display_name)}</span>
+          <div className="content-profile-copy">
+            <div className="content-profile-title"><div><p>Doctor studio</p><h1>{profile?.display_name || 'Your content'}</h1></div><Link className="primary-button" href="/create"><FilePlus2 aria-hidden="true" size={18} /> Create post</Link></div>
+            <p className="content-profile-specialty">{profile?.specialty || 'Health education'}{profile?.hospital_name ? ` · ${profile.hospital_name}` : ''}</p>
+            <div className="content-profile-stats"><span><strong>{posts.length}</strong> posts</span><span><strong>{posts.filter((post) => post.status === 'published').length}</strong> published</span><span><strong>{formatCount(posts.reduce((total, post) => total + Number(post.views_count || 0), 0))}</strong> views</span></div>
+          </div>
+        </header>
 
         {router.query.published ? <div className="success-banner" role="status">Published to the patient feed.</div> : null}
         {error ? <div className="error-banner" role="alert">{error}</div> : null}
@@ -110,4 +118,12 @@ export default function PostsPage() {
       </div>
     </>
   );
+}
+
+function initials(name = 'Doctor') {
+  return name.replace(/^Dr\.\s*/i, '').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function formatCount(value = 0) {
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
 }

@@ -2,6 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from 'r
 
 import {
   deletePost as deletePostRecord,
+  loadWorkspaceAnalytics,
   loadWorkspace,
   savePost as savePostRecord,
   saveProfile as saveProfileRecord,
@@ -15,6 +16,7 @@ export function WorkspaceProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [analytics, setAnalytics] = useState({ likes: [], views: [] });
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,11 +34,21 @@ export function WorkspaceProvider({ children }) {
       const workspace = await loadWorkspace();
       setProfile(workspace.profile);
       setPosts(workspace.posts);
-      setAnalytics(workspace.analytics || { likes: [], views: [] });
     } catch (loadError) {
       setError(loadError.message);
     } finally {
       setLoading(false);
+    }
+  }, [session]);
+
+  const refreshAnalytics = useCallback(async () => {
+    if (!session) return;
+    setAnalyticsLoading(true);
+    try {
+      const result = await loadWorkspaceAnalytics();
+      setAnalytics(result.analytics || { likes: [], views: [] });
+    } finally {
+      setAnalyticsLoading(false);
     }
   }, [session]);
 
@@ -50,6 +62,7 @@ export function WorkspaceProvider({ children }) {
       profile,
       posts,
       analytics,
+      refreshAnalytics,
       loading,
       error,
       refresh,
@@ -73,7 +86,7 @@ export function WorkspaceProvider({ children }) {
         return saved;
       },
     }),
-    [analytics, error, loading, posts, profile, refresh],
+    [analytics, error, loading, posts, profile, refresh, refreshAnalytics],
   );
 
   return <WorkspaceContext value={value}>{children}</WorkspaceContext>;

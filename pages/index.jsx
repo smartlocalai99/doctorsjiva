@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { EmptyState, StatCard } from '@/components/Ui';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -19,8 +19,9 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 const activityRanges = ['Today', '7D', '30D'];
 
 export default function DashboardPage() {
-  const { analytics, posts, loading, error, refresh } = useWorkspace();
+  const { analytics, posts, loading, error, refresh, refreshAnalytics } = useWorkspace();
   const [activityRange, setActivityRange] = useState('7D');
+  useEffect(() => { void refreshAnalytics(); }, [refreshAnalytics]);
   const published = posts.filter((post) => post.status === 'published');
   const totals = published.reduce(
     (result, post) => ({
