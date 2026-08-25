@@ -132,7 +132,7 @@ export default function CampsPage() {
         {error ? <p className="error-banner" role="alert">{error}</p> : null}
         {message ? <p className="success-banner" role="status">{message}</p> : null}
 
-        <div className={isFormVisible ? 'composer-grid' : ''}>
+        <div>
           {isFormVisible ? (
             <section className="composer-form-column" id="publish-camp-form">
               <form className="panel grid gap-5 py-5 sm:py-6" onSubmit={submit}>
@@ -204,66 +204,66 @@ export default function CampsPage() {
                 </button>
               </form>
             </section>
-          ) : null}
-
-          <section className="social-preview-column">
-            <div>
-              <p className="eyebrow">Published camps</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">Your camps</h2>
-            </div>
-            {loading ? (
-              <div className="grid gap-3" aria-label="Loading camps">
-                {[1, 2].map((item) => <div className="h-28 animate-pulse rounded-xl bg-slate-100" key={item} />)}
+          ) : (
+            <section className="social-preview-column">
+              <div>
+                <p className="eyebrow">Published camps</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">Your camps</h2>
               </div>
-            ) : camps.length === 0 ? (
-              <EmptyState
-                icon={House}
-                title="No camps published"
-                description="Your published medical and dental camps will appear here."
-                action={!isFormVisible ? <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}><Plus aria-hidden="true" size={18} /> Publish your first camp</button> : null}
-              />
-            ) : (
-              <div className={isFormVisible ? 'grid gap-3' : 'grid gap-3 sm:grid-cols-2'}>
-                {camps.map((camp) => (
-                  <article className="panel grid gap-4 p-4" key={camp.id}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
-                          <CampTypeIcon type={camp.event_type} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-brand">{TYPE_DETAILS[camp.event_type]?.label || 'Camp'}</p>
-                          <h3 className="mt-0.5 break-words font-extrabold text-ink">{camp.title}</h3>
+              {loading ? (
+                <div className="grid gap-3" aria-label="Loading camps">
+                  {[1, 2].map((item) => <div className="h-28 animate-pulse rounded-xl bg-slate-100" key={item} />)}
+                </div>
+              ) : camps.length === 0 ? (
+                <EmptyState
+                  icon={House}
+                  title="No camps published"
+                  description="Your published medical and dental camps will appear here."
+                  action={<button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}><Plus aria-hidden="true" size={18} /> Publish your first camp</button>}
+                />
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {camps.map((camp) => (
+                    <article className="panel grid gap-4 p-4" key={camp.id}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                            <CampTypeIcon type={camp.event_type} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-brand">{TYPE_DETAILS[camp.event_type]?.label || 'Camp'}</p>
+                            <h3 className="mt-0.5 break-words font-extrabold text-ink">{camp.title}</h3>
+                          </div>
                         </div>
+                        <button
+                          aria-label={`Remove ${camp.title}`}
+                          className="quiet-button shrink-0"
+                          disabled={deletingId === camp.id}
+                          type="button"
+                          onClick={() => remove(camp.id)}
+                        >
+                          <Trash2 aria-hidden="true" size={16} />
+                        </button>
                       </div>
-                      <button
-                        aria-label={`Remove ${camp.title}`}
-                        className="quiet-button shrink-0"
-                        disabled={deletingId === camp.id}
-                        type="button"
-                        onClick={() => remove(camp.id)}
-                      >
-                        <Trash2 aria-hidden="true" size={16} />
-                      </button>
-                    </div>
-                    <div className="grid gap-2 text-sm text-muted">
-                      <p className="flex items-center gap-2">
-                        <CalendarPlus aria-hidden="true" className="shrink-0" size={15} />
-                        {formatCampDate(camp.event_date)}
-                      </p>
-                      {camp.start_time || camp.end_time ? (
+                      <div className="grid gap-2 text-sm text-muted">
                         <p className="flex items-center gap-2">
-                          <Clock3 aria-hidden="true" className="shrink-0" size={15} />
-                          {formatCampTime(camp.start_time, camp.end_time)}
+                          <CalendarPlus aria-hidden="true" className="shrink-0" size={15} />
+                          {formatCampDate(camp.event_date)}
                         </p>
-                      ) : null}
-                      {camp.location ? <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={15} /><span>{camp.location}</span></p> : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
+                        {camp.start_time || camp.end_time ? (
+                          <p className="flex items-center gap-2">
+                            <Clock3 aria-hidden="true" className="shrink-0" size={15} />
+                            {formatCampTime(camp.start_time, camp.end_time)}
+                          </p>
+                        ) : null}
+                        {camp.location ? <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={15} /><span>{camp.location}</span></p> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </>
