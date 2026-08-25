@@ -135,7 +135,7 @@ export default function CampsPage() {
         <div className={isFormVisible ? 'composer-grid' : ''}>
           {isFormVisible ? (
             <section className="composer-form-column" id="publish-camp-form">
-              <form className="panel grid gap-5 p-5 sm:p-6" onSubmit={submit}>
+              <form className="panel grid gap-5 py-5 sm:py-6" onSubmit={submit}>
                 <div className="segmented-control" aria-label="Camp type">
                   {TYPE_OPTIONS.map(({ key, label, icon: Icon }) => (
                     <button
