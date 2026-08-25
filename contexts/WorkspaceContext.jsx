@@ -14,6 +14,7 @@ export function WorkspaceProvider({ children }) {
   const { session } = useAuth();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [analytics, setAnalytics] = useState({ likes: [], views: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,6 +22,7 @@ export function WorkspaceProvider({ children }) {
     if (!session) {
       setProfile(null);
       setPosts([]);
+      setAnalytics({ likes: [], views: [] });
       setLoading(false);
       return;
     }
@@ -30,6 +32,7 @@ export function WorkspaceProvider({ children }) {
       const workspace = await loadWorkspace();
       setProfile(workspace.profile);
       setPosts(workspace.posts);
+      setAnalytics(workspace.analytics || { likes: [], views: [] });
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -46,6 +49,7 @@ export function WorkspaceProvider({ children }) {
     () => ({
       profile,
       posts,
+      analytics,
       loading,
       error,
       refresh,
@@ -69,7 +73,7 @@ export function WorkspaceProvider({ children }) {
         return saved;
       },
     }),
-    [error, loading, posts, profile, refresh],
+    [analytics, error, loading, posts, profile, refresh],
   );
 
   return <WorkspaceContext value={value}>{children}</WorkspaceContext>;

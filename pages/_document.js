@@ -4,6 +4,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="application-name" content="DRJIVA Doctors" />
         <meta name="theme-color" content="#2E7EBC" />
         <meta name="description" content="Create and manage trusted health content for DRJIVA." />

@@ -15,10 +15,12 @@ export function PageHeading({ eyebrow, title, description, action }) {
 }
 
 export function StatCard({ label, value, icon: Icon, tone = 'blue', detail }) {
+  const numericValue = typeof value === 'number' ? value : Number.parseFloat(value) || 0;
+  const bars = Array.from({ length: 7 }, (_, index) => Math.max(14, Math.min(100, ((numericValue % (index + 5)) / (index + 5)) * 70 + 25)));
   return (
     <article className="dashboard-stat-card">
       <span className={`metric-icon metric-${tone}`}><Icon aria-hidden="true" size={19} /></span>
-      <div><p>{typeof value === 'number' ? formatCount(value) : value}</p><h3>{label}</h3>{detail ? <span>{detail}</span> : null}</div>
+      <div><div className="metric-value-row"><p>{typeof value === 'number' ? formatCount(value) : value}</p><div className="metric-bars" aria-hidden="true">{bars.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></div><h3>{label}</h3>{detail ? <span>{detail}</span> : null}</div>
     </article>
   );
 }

@@ -5,6 +5,7 @@ import {
   Building2,
   Camera,
   CheckCircle2,
+  Flag,
   GraduationCap,
   Loader2,
   LogOut,
@@ -15,6 +16,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import { Field } from '@/components/Ui';
@@ -193,6 +195,7 @@ function ProfileForm({ profile }) {
             <p>Doctor account</p>
             <div><Phone aria-hidden="true" size={18} /><span><small>Registered mobile</small><strong>{formatPhone(form.phone_number)}</strong></span></div>
             <p className="profile-account-hint">This number is the account key and cannot be edited here.</p>
+            <Link className="profile-reports-link" href="/reports"><Flag aria-hidden="true" size={17} /> Content reports</Link>
             <button className="quiet-button" type="button" onClick={signOut}><LogOut aria-hidden="true" size={17} /> Sign out</button>
           </section>
         </aside>

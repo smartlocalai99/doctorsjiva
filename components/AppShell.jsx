@@ -1,9 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- doctor avatars are user-uploaded Supabase URLs */
 import {
   CalendarHeart,
-  CircleUserRound,
   FilePlus2,
-  Flag,
   Home,
   LogOut,
   MonitorDown,
@@ -22,8 +20,6 @@ const navigation = [
   { href: '/create', label: 'Publish', icon: FilePlus2 },
   { href: '/posts', label: 'Content', icon: PanelsTopLeft },
   { href: '/camps', label: 'Camps', icon: CalendarHeart },
-  { href: '/reports', label: 'Reports', icon: Flag },
-  { href: '/profile', label: 'Profile', icon: CircleUserRound },
 ];
 
 export function RouteGuard({ children }) {
@@ -72,7 +68,7 @@ function AppShell({ children }) {
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white px-5 py-6 lg:flex">
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white px-5 py-6 lg:flex">
         <AppLogo />
         <nav className="mt-10 grid gap-2" aria-label="Main navigation">
           {navigation.map((item) => <NavItem key={item.href} item={item} currentPath={router.pathname} />)}
@@ -85,11 +81,10 @@ function AppShell({ children }) {
           ) : null}
           <div className="rounded-2xl border border-line bg-canvas p-3">
             <div className="flex items-center gap-3">
-              <Avatar profile={profile} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold">{profile?.display_name || 'Doctor'}</p>
-                <p className="truncate text-xs text-muted">{profile?.specialty || 'Complete your profile'}</p>
-              </div>
+                <Link className="profile-account-link flex min-w-0 flex-1 items-center gap-3" href="/profile" aria-label="Open profile">
+                  <Avatar profile={profile} />
+                  <span className="min-w-0"><strong className="block truncate text-sm">{profile?.display_name || 'Doctor'}</strong><small className="block truncate text-xs text-muted">{profile?.specialty || 'Complete your profile'}</small></span>
+                </Link>
               <button className="icon-button" type="button" onClick={signOut} aria-label="Sign out">
                 <LogOut size={17} />
               </button>
@@ -98,14 +93,14 @@ function AppShell({ children }) {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur-xl lg:hidden">
+      <header className="app-mobile-header sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur-xl lg:hidden">
         <AppLogo compact />
         <Link href="/profile" aria-label="Open profile"><Avatar profile={profile} /></Link>
       </header>
 
       <main className="min-h-dvh pb-24 lg:ml-64 lg:pb-0" id="main-content">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
+      <nav className="app-mobile-nav fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
         {navigation.map((item) => <MobileNavItem key={item.href} item={item} currentPath={router.pathname} />)}
       </nav>
     </div>
@@ -116,7 +111,7 @@ function NavItem({ item, currentPath }) {
   const Icon = item.icon;
   const active = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
   return (
-    <Link className={`nav-item ${active ? 'nav-item-active' : ''}`} href={item.href}>
+    <Link aria-current={active ? 'page' : undefined} className={`nav-item ${active ? 'nav-item-active' : ''}`} href={item.href}>
       <Icon size={19} strokeWidth={2.1} />
       {item.label}
     </Link>
@@ -127,7 +122,7 @@ function MobileNavItem({ item, currentPath }) {
   const Icon = item.icon;
   const active = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
   return (
-    <Link className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-semibold ${active ? 'text-brand' : 'text-muted'}`} href={item.href}>
+    <Link aria-current={active ? 'page' : undefined} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-semibold ${active ? 'text-brand' : 'text-muted'}`} href={item.href}>
       <Icon size={21} strokeWidth={active ? 2.5 : 2} />
       {item.label}
     </Link>

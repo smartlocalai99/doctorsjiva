@@ -17,6 +17,16 @@
   background: #fafafa;
 }
 
+html {
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+}
+
+html,
+body {
+  width: 100%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -25,7 +35,7 @@ body {
   margin: 0;
   background: #fafafa;
   color: #121416;
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -52,13 +62,12 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgb(46 126 188 / 25%);
-  outline-offset: 2px;
+  outline: none;
 }
 
 @layer components {
   .page-container {
-    @apply mx-auto grid w-full max-w-[1120px] gap-7 px-4 py-6 sm:gap-9 sm:px-7 sm:py-9 lg:px-10 lg:py-10;
+    @apply mx-auto grid w-full max-w-[1160px] gap-7 px-4 py-6 sm:gap-9 sm:px-7 sm:py-9 lg:px-10 lg:py-10;
   }
 
   .skip-link {
@@ -79,7 +88,7 @@ textarea:focus-visible {
   }
 
   .panel {
-    @apply rounded-2xl border border-line bg-white;
+    @apply rounded-xl border border-line bg-white;
   }
 
   .primary-button,
@@ -87,15 +96,15 @@ textarea:focus-visible {
   .quiet-button,
   .light-button,
   .google-button {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .primary-button {
-    @apply bg-brand text-white shadow-[0_8px_20px_rgba(46,126,188,0.2)] hover:bg-brand-dark;
+    @apply bg-brand text-white hover:bg-brand-dark;
   }
 
   .secondary-button {
-    @apply border border-line bg-white text-ink hover:border-brand hover:text-brand;
+    @apply border border-line bg-white text-ink hover:bg-canvas hover:text-brand;
   }
 
   .quiet-button {
@@ -111,19 +120,39 @@ textarea:focus-visible {
   }
 
   .icon-button {
-    @apply grid size-9 shrink-0 place-items-center rounded-xl text-muted transition hover:bg-slate-100 hover:text-ink;
+    @apply grid size-10 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-slate-100 hover:text-ink;
   }
 
   .nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-bold text-muted transition hover:bg-canvas hover:text-ink;
+    @apply flex min-h-11 items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-bold text-muted transition hover:bg-canvas hover:text-ink;
   }
 
   .nav-item-active {
     @apply bg-brand-soft text-brand;
   }
 
+  .app-sidebar {
+    box-shadow: 1px 0 0 rgb(18 20 22 / 2%);
+  }
+
+  .app-mobile-header {
+    min-height: 64px;
+  }
+
+  .app-mobile-nav a {
+    @apply min-h-11 justify-center;
+  }
+
+  .app-mobile-nav a[aria-current='page'] {
+    @apply bg-brand-soft;
+  }
+
+  .profile-account-link {
+    min-height: 44px;
+  }
+
   .form-control {
-    @apply w-full rounded-xl border border-line bg-white px-3.5 py-3 text-sm text-ink placeholder:text-slate-400 transition hover:border-slate-300 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10;
+    @apply w-full rounded-lg border border-line bg-white px-3.5 py-3 text-sm text-ink placeholder:text-slate-400 transition hover:border-slate-300 focus:border-brand focus:outline-none;
   }
 
   .section-heading {
@@ -322,7 +351,7 @@ textarea:focus-visible {
   }
 
   .search-control {
-    @apply flex min-h-11 items-center gap-3 rounded-xl border border-line bg-canvas px-3.5 text-muted focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10;
+    @apply flex min-h-11 items-center gap-3 rounded-xl border border-line bg-canvas px-3.5 text-muted focus-within:border-brand;
   }
 
   .search-control input {
@@ -386,8 +415,128 @@ textarea:focus-visible {
     @apply mt-2 text-xs font-semibold text-slate-400;
   }
 
-  .social-login-shell {
-    @apply grid min-h-dvh bg-white lg:grid-cols-[minmax(480px,1.08fr)_minmax(420px,0.92fr)];
+  .app-login-shell {
+    @apply relative grid min-h-dvh place-items-center overflow-hidden bg-white px-5 py-10 sm:px-8;
+    background-image: radial-gradient(circle at 50% 0%, #eef7fc, transparent 34rem);
+  }
+
+  .login-carousel {
+    @apply pointer-events-none absolute left-0 right-0 top-0 overflow-hidden opacity-80;
+    height: 286px;
+    mask-image: linear-gradient(to bottom, black 0%, black 54%, transparent 100%);
+  }
+
+  .login-carousel-row {
+    @apply flex gap-3;
+    animation: login-carousel-left 34s linear infinite;
+    width: max-content;
+  }
+
+  .login-carousel-row.reverse {
+    animation-direction: reverse;
+    animation-duration: 39s;
+  }
+
+  .login-carousel-row img {
+    @apply size-[92px] shrink-0 rounded-[23px] object-cover;
+    opacity: 0.58;
+  }
+
+  .login-carousel-row:nth-child(2) {
+    margin-left: -110px;
+    margin-top: 12px;
+  }
+
+  .login-carousel-row:nth-child(3) {
+    margin-left: -30px;
+    margin-top: 12px;
+  }
+
+  @keyframes login-carousel-left {
+    from { transform: translateX(-420px); }
+    to { transform: translateX(0); }
+  }
+
+  .app-login-content {
+    @apply relative z-10 flex w-full max-w-[390px] flex-col items-center;
+    margin-top: 120px;
+  }
+
+  .app-login-heading {
+    @apply mt-7 text-center;
+  }
+
+  .app-login-heading h1 {
+    @apply text-[28px] font-extrabold leading-tight  text-ink;
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+  }
+
+  .app-login-heading p {
+    @apply mt-1 text-sm font-semibold text-muted;
+  }
+
+  .app-login-heading span {
+    @apply mt-3 block text-sm leading-6 text-muted;
+  }
+
+  .app-login-form {
+    @apply mt-8 grid w-full gap-5;
+  }
+
+  .app-login-field {
+    @apply grid gap-2;
+  }
+
+  .app-login-field > span {
+    @apply text-sm font-extrabold text-ink;
+  }
+
+  .app-login-field > div {
+    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 text-muted transition focus-within:border-brand;
+  }
+
+  .app-login-field b {
+    @apply border-r border-line pr-3 text-sm text-ink;
+  }
+
+  .india-flag {
+    @apply shrink-0 border-r border-line pr-3 text-xl leading-none;
+  }
+
+  .app-login-field input {
+    @apply min-w-0 flex-1 bg-transparent text-base font-bold tracking-wide text-ink outline-none placeholder:text-slate-300;
+  }
+
+  .pin-input-wrap {
+    @apply relative;
+  }
+
+  .pin-cells {
+    @apply flex min-w-0 flex-1 gap-3;
+  }
+
+  .pin-cells span {
+    @apply grid size-9 place-items-center rounded-xl border border-line bg-canvas text-xl font-extrabold leading-none text-brand sm:size-10;
+  }
+
+  .pin-cells span.filled {
+    @apply border-brand/40 bg-brand-soft;
+  }
+
+  .pin-input-wrap input {
+    @apply absolute inset-0 h-full w-full cursor-text opacity-0;
+  }
+
+  .app-login-button {
+    @apply mt-1 min-h-14 rounded-2xl text-base;
+  }
+
+  .app-login-footer {
+    @apply mt-6 flex items-center gap-1.5 text-xs font-semibold text-muted;
+  }
+
+  .app-login-footer svg {
+    @apply text-brand;
   }
 
   .social-login-visual {
@@ -492,7 +641,7 @@ textarea:focus-visible {
   }
 
   .login-field > div {
-    @apply flex min-h-13 items-center gap-3 rounded-xl border border-line px-4 text-muted transition focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10;
+    @apply flex min-h-13 items-center gap-3 rounded-xl border border-line px-4 text-muted transition focus-within:border-brand;
   }
 
   .login-field b {
@@ -650,7 +799,7 @@ textarea:focus-visible {
   }
 
   .post-card {
-    @apply border border-line bg-white transition hover:border-slate-300;
+    @apply rounded-xl border border-line bg-white transition hover:border-slate-300;
   }
 
   .post-card-list {
@@ -759,6 +908,10 @@ textarea:focus-visible {
     @apply mt-2 block text-xs font-medium text-muted sm:text-sm;
   }
 
+  .dashboard-create-link {
+    @apply shrink-0;
+  }
+
   .dashboard-header-profile {
     @apply hidden shrink-0 rounded-full lg:block;
   }
@@ -780,73 +933,12 @@ textarea:focus-visible {
     @apply text-sm;
   }
 
-  .dashboard-publish-card {
-    @apply grid overflow-hidden rounded-[1.6rem] bg-brand text-white shadow-[0_18px_48px_rgba(46,126,188,0.2)] lg:grid-cols-[minmax(0,1fr)_310px];
-    background-image: radial-gradient(circle at 5% 5%, rgb(255 255 255 / 16%), transparent 28%), linear-gradient(125deg, #286f9f, #2e7ebc 58%, #3a8ec7);
-  }
-
-  .dashboard-publish-copy {
-    @apply grid gap-5 p-6 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:p-8;
-  }
-
-  .publish-symbol {
-    @apply grid size-11 place-items-center rounded-xl bg-white/15;
-  }
-
-  .dashboard-publish-copy p {
-    @apply text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-100;
-  }
-
-  .dashboard-publish-copy h2 {
-    @apply mt-2 max-w-xl text-2xl font-extrabold leading-tight tracking-[-0.035em] sm:text-3xl;
-  }
-
-  .dashboard-publish-copy div > span {
-    @apply mt-2 block max-w-xl text-xs leading-5 text-blue-50/80 sm:text-sm sm:leading-6;
-  }
-
-  .dashboard-publish-button {
-    @apply inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-extrabold text-brand shadow-sm transition hover:-translate-y-0.5;
-  }
-
-  .profile-completion-card {
-    @apply grid content-center bg-[#1f628f]/45 p-6 sm:p-8 lg:bg-white/10;
-  }
-
-  .profile-completion-top {
-    @apply flex items-center justify-between gap-4;
-  }
-
-  .profile-completion-top span {
-    @apply text-xs font-bold text-blue-50;
-  }
-
-  .profile-completion-top strong {
-    @apply text-lg font-extrabold tabular-nums;
-  }
-
   .profile-progress-track {
     @apply mt-3 h-2 overflow-hidden rounded-full bg-slate-200;
   }
 
-  .profile-completion-card .profile-progress-track {
-    @apply bg-white/20;
-  }
-
   .profile-progress-track i {
     @apply block h-full rounded-full bg-brand transition-[width];
-  }
-
-  .profile-completion-card .profile-progress-track i {
-    @apply bg-white;
-  }
-
-  .profile-completion-card > p {
-    @apply mt-3 text-xs leading-5 text-blue-50/75;
-  }
-
-  .profile-completion-card > a {
-    @apply mt-3 inline-flex items-center text-xs font-extrabold text-white hover:underline;
   }
 
   .dashboard-section-heading,
@@ -873,15 +965,125 @@ textarea:focus-visible {
   }
 
   .dashboard-metric-grid {
-    @apply grid grid-cols-2 gap-3 xl:grid-cols-5;
+    @apply mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4;
+  }
+
+  .activity-range {
+    @apply grid grid-cols-3 gap-1 rounded-xl border border-line bg-slate-50 p-1;
+  }
+
+  .activity-range button {
+    @apply min-h-11 rounded-lg px-3 text-xs font-extrabold tracking-[0.08em] text-slate-400 transition hover:text-ink;
+  }
+
+  .activity-range button.selected {
+    @apply bg-white text-brand shadow-[0_2px_8px_rgba(18,20,22,0.08)];
+  }
+
+  .weekly-activity {
+    @apply mt-3 rounded-xl border border-line bg-white p-4 sm:p-5;
+  }
+
+  .weekly-activity-heading {
+    @apply flex items-end justify-between gap-4;
+  }
+
+  .weekly-activity-heading h3 {
+    @apply text-base font-extrabold text-ink;
+  }
+
+  .weekly-activity-heading p {
+    @apply text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand;
+  }
+
+  .weekly-activity-heading h2 {
+    @apply mt-1 text-lg font-extrabold;
+  }
+
+  .weekly-activity-heading > span {
+    @apply flex flex-wrap items-center gap-2 text-[10px] font-bold text-muted;
+  }
+
+  .weekly-activity-heading > span i {
+    @apply size-2 rounded-full;
+  }
+
+  .weekly-chart {
+    @apply mt-5;
+  }
+
+  .activity-line-graph {
+    @apply block w-full;
+    height: 220px;
+  }
+
+  .activity-line-graph line {
+    stroke: #e6e9ec;
+    stroke-width: 1;
+  }
+
+  .activity-line-graph text {
+    fill: #8a9299;
+    font-size: 12px;
+  }
+
+  .activity-line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  .activity-line-views {
+    stroke: #2e7ebc;
+  }
+
+  .activity-area-views {
+    fill: #dceeff;
+    opacity: 0.85;
+  }
+
+  .activity-line-labels {
+    @apply grid gap-2 text-center text-[10px] font-bold text-muted;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin-left: 36px;
+    margin-right: 20px;
+  }
+
+  .weekly-chart-today .activity-line-labels {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .dashboard-create-cta {
+    @apply mt-6 min-h-14 w-full justify-between rounded-xl px-5 text-base;
+  }
+
+  .dashboard-content-grid {
+    @apply mt-8;
   }
 
   .dashboard-stat-card {
-    @apply grid min-w-0 content-between gap-5 rounded-2xl border border-line bg-white p-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-4 sm:p-5;
+    @apply grid min-w-0 content-between gap-5 rounded-xl border border-line bg-white p-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-4 sm:p-5;
   }
 
   .dashboard-stat-card > div > p {
     @apply text-2xl font-extrabold tabular-nums tracking-[-0.04em] sm:text-3xl;
+  }
+
+  .metric-value-row {
+    @apply flex items-end justify-between gap-3;
+  }
+
+  .metric-bars {
+    @apply flex h-9 items-end gap-1;
+  }
+
+  .metric-bars i {
+    @apply block w-1.5 rounded-full bg-brand/30;
+  }
+
+  .metric-bars i:last-child {
+    @apply bg-brand;
   }
 
   .dashboard-stat-card h3 {
@@ -905,7 +1107,7 @@ textarea:focus-visible {
   }
 
   .dashboard-content-panel {
-    @apply min-w-0 rounded-2xl border border-line bg-white p-4 sm:p-6;
+    @apply min-w-0 rounded-xl border border-line bg-white p-4 sm:p-6;
   }
 
   .dashboard-post-list {
@@ -960,7 +1162,7 @@ textarea:focus-visible {
   }
 
   .dashboard-doctor-card {
-    @apply grid justify-items-center rounded-2xl border border-line bg-white p-6 text-center;
+    @apply grid justify-items-center rounded-xl border border-line bg-white p-6 text-center;
   }
 
   .dashboard-doctor-name {
@@ -1008,7 +1210,7 @@ textarea:focus-visible {
   }
 
   .top-content-card {
-    @apply rounded-2xl bg-[#102c3f] p-5 text-white;
+    @apply rounded-xl bg-[#102c3f] p-5 text-white;
   }
 
   .top-content-card > span {
@@ -1121,7 +1323,7 @@ textarea:focus-visible {
   .profile-section-card,
   .profile-strength-card,
   .profile-account-card {
-    @apply rounded-2xl border border-line bg-white p-5 sm:p-6;
+    @apply rounded-xl border border-line bg-white p-5 sm:p-6;
   }
 
   .profile-section-title {
@@ -1145,7 +1347,7 @@ textarea:focus-visible {
   }
 
   .profile-save-bar {
-    @apply flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-[0_14px_40px_rgba(18,20,22,0.08)] sm:flex-row sm:items-center sm:justify-between lg:sticky lg:bottom-5 lg:z-10 lg:bg-white/95 lg:backdrop-blur-xl;
+    @apply flex flex-col gap-4 rounded-xl border border-line bg-white p-4 shadow-[0_8px_24px_rgba(18,20,22,0.06)] sm:flex-row sm:items-center sm:justify-between lg:sticky lg:bottom-5 lg:z-10 lg:bg-white/95 lg:backdrop-blur-xl;
   }
 
   .profile-save-bar strong,
@@ -1223,6 +1425,10 @@ textarea:focus-visible {
     @apply mt-3 text-[10px] leading-4 text-muted;
   }
 
+  .profile-reports-link {
+    @apply mt-4 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-ink transition hover:bg-canvas hover:text-brand;
+  }
+
   .profile-account-card button {
     @apply mt-4 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700;
   }
@@ -1232,7 +1438,7 @@ textarea:focus-visible {
   }
 
   .post-card-manage {
-    @apply grid grid-cols-[84px_minmax(0,1fr)] gap-3 overflow-hidden rounded-2xl p-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-5 sm:p-4;
+    @apply grid grid-cols-[84px_minmax(0,1fr)] gap-3 overflow-hidden rounded-xl p-3 sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-5 sm:p-4;
   }
 
   .post-card-manage .post-card-media {
