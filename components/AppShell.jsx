@@ -12,6 +12,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { NurseProvider } from '@/contexts/NurseContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { AppLogo } from './AppLogo';
 
@@ -26,12 +27,17 @@ export function RouteGuard({ children }) {
   const router = useRouter();
   const { session, loading } = useAuth();
   const isLogin = router.pathname === '/login';
+  // The nurse desk (/nurse) has its own PIN login and never uses the
+  // doctor session or the doctor navigation.
+  const isNurse = router.pathname === '/nurse' || router.pathname.startsWith('/nurse/');
 
   useEffect(() => {
-    if (loading) return;
+    if (isNurse || loading) return;
     if (!session && !isLogin) void router.replace('/login');
     if (session && isLogin) void router.replace('/');
-  }, [isLogin, loading, router, session]);
+  }, [isLogin, isNurse, loading, router, session]);
+
+  if (isNurse) return <NurseProvider>{children}</NurseProvider>;
 
   if (loading || (!session && !isLogin) || (session && isLogin)) {
     return (

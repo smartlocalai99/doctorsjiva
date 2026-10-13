@@ -1729,3 +1729,371 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===================================================================
+   Nurse desk (/nurse) — phone first. Same tokens as Doctor Studio;
+   bigger text and tap targets because nurses work from their phones.
+   =================================================================== */
+@layer components {
+  .nurse-shell {
+    @apply min-h-dvh bg-canvas text-ink;
+  }
+
+  .nurse-shell :is(button, a, select, input, textarea):focus-visible {
+    outline: 3px solid rgb(46 126 188 / 45%);
+    outline-offset: 2px;
+  }
+
+  .nurse-topbar {
+    @apply sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur-xl;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .nurse-logo {
+    @apply hidden shrink-0 sm:block;
+  }
+
+  .nurse-identity {
+    @apply min-w-0 flex-1 leading-tight;
+  }
+
+  .nurse-identity strong {
+    @apply block truncate text-base font-extrabold;
+  }
+
+  .nurse-identity span {
+    @apply block truncate text-sm font-semibold text-muted;
+  }
+
+  .nurse-icon-button {
+    @apply grid size-12 shrink-0 place-items-center rounded-xl text-ink transition hover:bg-canvas;
+  }
+
+  .nurse-main {
+    @apply mx-auto grid w-full max-w-[560px] gap-5 px-4 py-5;
+  }
+
+  .nurse-main-with-footer {
+    padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+  }
+
+  .nurse-footer {
+    @apply fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 backdrop-blur-xl;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .nurse-save-bar {
+    @apply mx-auto grid w-full max-w-[560px] gap-2 px-4 py-3;
+  }
+
+  .nurse-save-error {
+    @apply text-sm font-bold text-red-700;
+  }
+
+  .nurse-title {
+    @apply text-[28px] font-extrabold leading-tight tracking-[-0.03em] text-ink;
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+  }
+
+  .nurse-lead {
+    @apply mt-1 text-base leading-7 text-muted;
+  }
+
+  .nurse-muted {
+    @apply text-sm leading-6 text-muted;
+  }
+
+  .nurse-section {
+    @apply grid gap-4;
+  }
+
+  .nurse-card {
+    @apply grid gap-4 rounded-2xl border border-line bg-white p-4;
+  }
+
+  .nurse-card-title {
+    @apply text-lg font-extrabold leading-snug;
+  }
+
+  .nurse-field {
+    @apply grid gap-2;
+  }
+
+  .nurse-field > span {
+    @apply text-sm font-extrabold text-ink;
+  }
+
+  .nurse-field em {
+    @apply ml-1 font-semibold not-italic text-muted;
+  }
+
+  .nurse-field small {
+    @apply text-xs font-semibold leading-5 text-muted;
+  }
+
+  .nurse-input-wrap {
+    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 transition focus-within:border-brand;
+  }
+
+  .nurse-input-wrap input,
+  .nurse-input-wrap select {
+    @apply min-w-0 flex-1 bg-transparent text-[17px] font-bold text-ink outline-none placeholder:font-semibold placeholder:text-slate-400;
+  }
+
+  .nurse-shell .nurse-input-wrap input:focus-visible,
+  .nurse-shell .nurse-input-wrap select:focus-visible {
+    outline: none;
+  }
+
+  .nurse-select-wrap select {
+    @apply min-h-14 cursor-pointer;
+  }
+
+  .nurse-input-prefix {
+    @apply border-r border-line pr-3 text-base font-extrabold text-muted;
+  }
+
+  .nurse-textarea {
+    @apply w-full resize-y rounded-2xl border border-line bg-white p-4 text-base leading-6 text-ink placeholder:text-slate-400 focus:border-brand;
+  }
+
+  .nurse-big-button {
+    @apply min-h-14 w-full rounded-2xl text-base;
+  }
+
+  .nurse-segment {
+    @apply grid grid-flow-col gap-1 rounded-2xl bg-slate-100 p-1;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .nurse-segment button {
+    @apply min-h-12 rounded-xl px-2 text-[15px] font-extrabold text-muted transition;
+  }
+
+  .nurse-segment button:is([aria-selected='true'], [aria-checked='true']) {
+    @apply bg-white text-ink shadow-[0_1px_3px_rgba(18,20,22,0.12)];
+  }
+
+  .nurse-search,
+  .nurse-form {
+    @apply grid gap-4;
+  }
+
+  .nurse-patient-head {
+    @apply grid gap-1;
+  }
+
+  .nurse-patient-meta {
+    @apply flex flex-wrap items-center gap-x-4 text-base font-bold text-ink;
+  }
+
+  .nurse-link-button {
+    @apply inline-flex min-h-11 items-center gap-1.5 text-sm font-extrabold text-brand;
+  }
+
+  .nurse-saved {
+    @apply flex-wrap;
+  }
+
+  .nurse-saved span {
+    @apply inline-flex items-start gap-2;
+  }
+
+  .nurse-saved a {
+    @apply font-extrabold underline;
+  }
+
+  .nurse-action-button {
+    @apply flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft px-4 text-base font-extrabold text-brand transition hover:border-brand;
+  }
+
+  /* Plans and the checklist */
+  .nurse-plan {
+    @apply grid gap-3 rounded-2xl border border-line bg-white p-4;
+  }
+
+  .nurse-plan-head h2 {
+    @apply text-xl font-extrabold leading-snug tracking-[-0.02em];
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+  }
+
+  .nurse-plan-head p {
+    @apply mt-1 text-[15px] font-bold text-muted;
+  }
+
+  .nurse-progress {
+    @apply h-2 overflow-hidden rounded-full bg-slate-100;
+  }
+
+  .nurse-progress i {
+    @apply block h-full rounded-full bg-brand;
+  }
+
+  .nurse-plan-note {
+    @apply flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800;
+  }
+
+  .nurse-every-visit {
+    @apply rounded-xl bg-canvas px-3 py-2.5 text-sm font-bold leading-6 text-ink;
+  }
+
+  .nurse-plan-subhead {
+    @apply mt-1 text-sm font-extrabold text-brand;
+  }
+
+  .nurse-plan-subhead-pending {
+    @apply text-amber-700;
+  }
+
+  .nurse-checklist {
+    @apply grid gap-2;
+  }
+
+  .nurse-check {
+    @apply grid gap-3 rounded-xl border border-line bg-white p-3;
+  }
+
+  .nurse-check-due_now {
+    @apply border-brand/40 bg-brand-soft/50;
+  }
+
+  .nurse-check-pending {
+    @apply border-amber-200 bg-amber-50/70;
+  }
+
+  .nurse-check-done {
+    @apply border-emerald-200 bg-emerald-50/60;
+  }
+
+  .nurse-check-not_needed {
+    @apply bg-slate-50;
+  }
+
+  .nurse-check-copy {
+    @apply grid gap-0.5;
+  }
+
+  .nurse-check-copy strong {
+    @apply text-base font-bold leading-snug;
+  }
+
+  .nurse-check-copy span {
+    @apply text-[13px] font-semibold leading-5 text-muted;
+  }
+
+  .nurse-check-copy em {
+    @apply text-xs font-extrabold not-italic;
+  }
+
+  .nurse-check-recorded {
+    @apply text-emerald-700;
+  }
+
+  .nurse-check-staged {
+    @apply text-brand;
+  }
+
+  .nurse-check-actions {
+    @apply grid grid-cols-2 gap-2;
+  }
+
+  .nurse-choice {
+    @apply inline-flex min-h-12 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-2 text-[15px] font-extrabold text-ink transition;
+  }
+
+  .nurse-choice-done[aria-pressed='true'] {
+    @apply border-success bg-success text-white;
+  }
+
+  .nurse-choice-skip[aria-pressed='true'] {
+    @apply border-slate-600 bg-slate-600 text-white;
+  }
+
+  .nurse-disclosure {
+    @apply flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-extrabold text-brand transition hover:bg-brand-soft;
+  }
+
+  .nurse-schedule {
+    @apply grid gap-4 border-t border-line pt-4;
+  }
+
+  .nurse-visit {
+    @apply grid gap-2 border-l-4 border-slate-200 pl-3;
+  }
+
+  .nurse-visit-done {
+    @apply border-emerald-400;
+  }
+
+  .nurse-visit-due_now {
+    @apply border-brand;
+  }
+
+  .nurse-visit-pending {
+    @apply border-amber-400;
+  }
+
+  .nurse-visit h4 {
+    @apply grid;
+  }
+
+  .nurse-visit h4 span {
+    @apply text-[15px] font-extrabold;
+  }
+
+  .nurse-visit h4 small {
+    @apply text-xs font-semibold text-muted;
+  }
+
+  .nurse-plan-actions {
+    @apply flex flex-wrap gap-2 border-t border-line pt-3;
+  }
+
+  .nurse-plan-actions button {
+    @apply min-h-12 flex-1;
+  }
+
+  .nurse-quick-dates {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .nurse-quick-dates button {
+    @apply min-h-12 rounded-xl border border-line bg-white text-[15px] font-extrabold text-ink transition;
+  }
+
+  .nurse-quick-dates button[aria-pressed='true'] {
+    @apply border-brand bg-brand-soft text-brand;
+  }
+
+  .nurse-preview {
+    @apply rounded-xl bg-brand-soft px-4 py-3 text-base font-extrabold text-brand;
+  }
+
+  /* Sheets: bottom sheet on phones, dialog on larger screens */
+  .nurse-sheet-backdrop {
+    @apply fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-6;
+  }
+
+  .nurse-sheet {
+    @apply grid max-h-[92dvh] w-full max-w-[560px] gap-4 overflow-y-auto rounded-t-3xl bg-white p-5 sm:rounded-3xl;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .nurse-sheet-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .nurse-sheet-head h2 {
+    @apply text-xl font-extrabold tracking-[-0.02em];
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+  }
+
+  /* Login: reuse the doctor login, without the carousel offset */
+  .nurse-login-content {
+    margin-top: 0;
+  }
+
+  .nurse-login-mark {
+    @apply size-[72px];
+  }
+}
