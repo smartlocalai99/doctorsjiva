@@ -1,11 +1,8 @@
-import { Check, ClipboardPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { NurseSheet } from '@/components/nurse/NurseSheet';
 import { nurseRequest } from '@/contexts/NurseContext';
 import { addDays, formatDate } from '@/lib/nurse-schedule';
-
-const SHORT = { day: 'numeric', month: 'short' };
 
 // Shown as suggestions while typing; any other name can be typed too.
 const COMMON_TESTS = [
@@ -16,92 +13,6 @@ const COMMON_TESTS = [
   'ECG', 'Ultrasound scan', 'NT scan', 'Anomaly scan (TIFFA)', 'Growth scan', 'Doppler scan', 'NST',
   'Fetal echo', 'Double marker', 'Quadruple marker', 'Iron injection', 'Td injection', 'Anti-D injection',
 ];
-
-export const extraKey = (item) => `extra:${item.id}`;
-
-export function extraStatus(changes, item) {
-  const staged = changes[extraKey(item)];
-  if (staged === 'clear') return null;
-  return staged ?? item.status;
-}
-
-function ExtraRow({ changes, item, nextDate, onRemove, onToggle, removing }) {
-  const staged = changes[extraKey(item)];
-  const status = extraStatus(changes, item);
-  const choose = (choice) => onToggle(item, status === choice ? null : choice);
-  const state = status === 'done' ? 'done' : status === 'not_needed' ? 'not_needed' : 'due_now';
-  const when = item.dueDate === nextDate ? `Next visit · ${formatDate(item.dueDate, SHORT)}` : `Due ${formatDate(item.dueDate, SHORT)}`;
-
-  return (
-    <li className={`nurse-check nurse-check-${state}`}>
-      <div className="nurse-check-copy">
-        <strong>{item.label}</strong>
-        <span>{when} · added by {item.addedBy}</span>
-        {staged ? <em className="nurse-check-staged">Not saved yet</em> : null}
-        {!staged && item.status ? (
-          <em className="nurse-check-recorded">
-            {item.status === 'done' ? `Done ${formatDate(item.doneOn, SHORT)}` : 'Not needed'}
-            {item.statusBy ? ` · ${item.statusBy}` : ''}
-          </em>
-        ) : null}
-      </div>
-      <div className="nurse-check-actions" role="group" aria-label={`Status of ${item.label}`}>
-        <button aria-pressed={status === 'done'} className="nurse-choice nurse-choice-done" type="button" onClick={() => choose('done')}>
-          <Check aria-hidden="true" size={18} strokeWidth={3} /> Done
-        </button>
-        <button aria-pressed={status === 'not_needed'} className="nurse-choice nurse-choice-skip" type="button" onClick={() => choose('not_needed')}>
-          Not needed
-        </button>
-        {!item.status && !staged ? (
-          <button
-            aria-label={`Remove ${item.label}`}
-            className="nurse-choice nurse-choice-remove"
-            disabled={removing}
-            type="button"
-            onClick={() => onRemove(item)}
-          >
-            <Trash2 aria-hidden="true" size={17} />
-          </button>
-        ) : null}
-      </div>
-    </li>
-  );
-}
-
-export function ExtraTestsCard({ changes, items, nextDate, onAdd, onRemove, onToggle, removingId }) {
-  // Grouped by what is saved, so a tapped row stays put until "Save visit".
-  const open = items.filter((item) => !item.status).sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1));
-  const closed = items.filter((item) => item.status);
-
-  return (
-    <section className="nurse-card" aria-labelledby="extra-heading">
-      <h2 className="nurse-card-title" id="extra-heading">Tests and scans from the case sheet</h2>
-      {items.length ? null : (
-        <p className="nurse-muted">Add any test or scan the doctor wrote that is not in the schedule. The patient sees it for the next visit.</p>
-      )}
-      {open.length ? (
-        <ul className="nurse-checklist">
-          {open.map((item) => (
-            <ExtraRow changes={changes} item={item} key={item.id} nextDate={nextDate} onRemove={onRemove} onToggle={onToggle} removing={removingId === item.id} />
-          ))}
-        </ul>
-      ) : null}
-      {closed.length ? (
-        <>
-          <h3 className="nurse-plan-subhead">Done or not needed</h3>
-          <ul className="nurse-checklist">
-            {closed.map((item) => (
-              <ExtraRow changes={changes} item={item} key={item.id} nextDate={nextDate} onRemove={onRemove} onToggle={onToggle} removing={false} />
-            ))}
-          </ul>
-        </>
-      ) : null}
-      <button className="nurse-action-button" type="button" onClick={onAdd}>
-        <ClipboardPlus aria-hidden="true" size={22} /> Add test or scan
-      </button>
-    </section>
-  );
-}
 
 export function AddExtraSheet({ nextDate, onClose, onDone, patientId, today }) {
   const [label, setLabel] = useState('');

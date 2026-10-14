@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { NurseSheet } from '@/components/nurse/NurseSheet';
 import { nurseRequest } from '@/contexts/NurseContext';
-import { addDays, childAge, daysBetween, formatDate } from '@/lib/nurse-schedule';
+import { addDays, childAge, daysBetween, formatDate, pregnancyText } from '@/lib/nurse-schedule';
 
 function SheetError({ message }) {
   return message ? <p className="error-banner" role="alert">{message}</p> : null;
@@ -36,7 +36,7 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
   const week = lmp ? Math.floor(daysBetween(lmp, today) / 7) : null;
 
   return (
-    <NurseSheet title="Start pregnancy schedule" onClose={onClose}>
+    <NurseSheet title="Pregnancy confirmed" onClose={onClose}>
       <form
         className="nurse-form"
         onSubmit={(event) => {
@@ -58,11 +58,11 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
           <small>The mobile may be the husband&apos;s. Check the name with her.</small>
         </label>
         <div className="nurse-segment" role="radiogroup" aria-label="Date known">
-          <button aria-checked={mode === 'lmp'} role="radio" type="button" onClick={() => { setMode('lmp'); setDate(''); }}>LMP date</button>
-          <button aria-checked={mode === 'edd'} role="radio" type="button" onClick={() => { setMode('edd'); setDate(''); }}>Due date (EDD)</button>
+          <button aria-checked={mode === 'lmp'} role="radio" type="button" onClick={() => { setMode('lmp'); setDate(''); }}>Last period date</button>
+          <button aria-checked={mode === 'edd'} role="radio" type="button" onClick={() => { setMode('edd'); setDate(''); }}>Expected delivery date</button>
         </div>
         <label className="nurse-field">
-          <span>{mode === 'lmp' ? 'First day of last period (LMP)' : 'Expected due date (EDD)'}</span>
+          <span>{mode === 'lmp' ? 'First day of her last period' : 'Expected delivery date'}</span>
           <div className="nurse-input-wrap">
             <input
               max={mode === 'lmp' ? today : addDays(today, 300)}
@@ -75,11 +75,11 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
           </div>
         </label>
         {date ? (
-          <p className="nurse-preview">Week {Math.max(0, week)} today · Due {formatDate(edd)}</p>
+          <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p>
         ) : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !date || motherName.trim().length < 2} type="submit">
-          {busy ? 'Starting…' : 'Start schedule'}
+          {busy ? 'Starting…' : 'Start pregnancy'}
         </button>
       </form>
     </NurseSheet>
@@ -182,11 +182,11 @@ export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
           </label>
         ) : null}
         <div className="nurse-segment" role="radiogroup" aria-label="Date known">
-          <button aria-checked={mode === 'lmp'} role="radio" type="button" onClick={() => { setMode('lmp'); setDate(''); }}>LMP date</button>
-          <button aria-checked={mode === 'edd'} role="radio" type="button" onClick={() => { setMode('edd'); setDate(''); }}>Due date (EDD)</button>
+          <button aria-checked={mode === 'lmp'} role="radio" type="button" onClick={() => { setMode('lmp'); setDate(''); }}>Last period date</button>
+          <button aria-checked={mode === 'edd'} role="radio" type="button" onClick={() => { setMode('edd'); setDate(''); }}>Expected delivery date</button>
         </div>
         <label className="nurse-field">
-          <span>{mode === 'lmp' ? 'First day of last period (LMP)' : 'Expected due date (EDD)'}</span>
+          <span>{mode === 'lmp' ? 'First day of her last period' : 'Expected delivery date'}</span>
           <div className="nurse-input-wrap">
             <input
               max={mode === 'lmp' ? today : addDays(today, 300)}
@@ -198,7 +198,7 @@ export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
             />
           </div>
         </label>
-        {date ? <p className="nurse-preview">Week {Math.max(0, week)} today · Due {formatDate(edd)}</p> : null}
+        {date ? <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p> : null}
         <SheetError message={error} />
         {existingId ? (
           <a className="nurse-link-button" href={`/nurse/patient/${existingId}`}>Open her page</a>
@@ -269,7 +269,7 @@ export function ClosePlanSheet({ onClose, onDone, plan, today }) {
   const { busy, error, run } = useSubmit(onDone);
 
   return (
-    <NurseSheet title={isPregnancy ? 'Close pregnancy schedule' : `Stop ${plan.personName}'s schedule`} onClose={onClose}>
+    <NurseSheet title={isPregnancy ? 'Pregnancy finished' : `Stop ${plan.personName}'s vaccines`} onClose={onClose}>
       <form
         className="nurse-form"
         onSubmit={(event) => {
@@ -286,7 +286,7 @@ export function ClosePlanSheet({ onClose, onDone, plan, today }) {
             </div>
           </div>
         ) : (
-          <p className="nurse-muted">The vaccine schedule will stop showing in the patient&apos;s app.</p>
+          <p className="nurse-muted">The vaccine dates will stop showing in the patient&apos;s app.</p>
         )}
         <label className="nurse-field">
           <span>Date</span>
@@ -296,7 +296,7 @@ export function ClosePlanSheet({ onClose, onDone, plan, today }) {
         </label>
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !outcome || !date} type="submit">
-          {busy ? 'Saving…' : isPregnancy ? 'Close schedule' : 'Stop schedule'}
+          {busy ? 'Saving…' : isPregnancy ? 'Save' : 'Stop vaccines'}
         </button>
       </form>
     </NurseSheet>
@@ -310,7 +310,7 @@ export function CorrectDueDateSheet({ onClose, onDone, plan, today }) {
   const week = edd ? Math.floor(daysBetween(addDays(edd, -280), today) / 7) : null;
 
   return (
-    <NurseSheet title="Correct due date" onClose={onClose}>
+    <NurseSheet title="Change delivery date" onClose={onClose}>
       <form
         className="nurse-form"
         onSubmit={(event) => {
@@ -323,12 +323,12 @@ export function CorrectDueDateSheet({ onClose, onDone, plan, today }) {
           <div className="nurse-input-wrap"><input maxLength={80} required value={motherName} onChange={(event) => setMotherName(event.target.value)} /></div>
         </label>
         <label className="nurse-field">
-          <span>Due date from the scan (EDD)</span>
+          <span>Expected delivery date (from the scan)</span>
           <div className="nurse-input-wrap">
             <input max={addDays(today, 300)} min={addDays(today, -28)} required type="date" value={edd} onChange={(event) => setEdd(event.target.value)} />
           </div>
         </label>
-        {edd ? <p className="nurse-preview">Week {Math.max(0, week)} today · Due {formatDate(edd)}</p> : null}
+        {edd ? <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !edd || motherName.trim().length < 2} type="submit">
           {busy ? 'Saving…' : 'Save'}

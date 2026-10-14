@@ -1,13 +1,12 @@
-import { Baby, CheckCircle2, HeartPulse, Pencil, Search } from 'lucide-react';
+import { Baby, CheckCircle2, ClipboardPlus, HeartPulse, Search } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AddExtraSheet, ExtraTestsCard, extraKey } from '@/components/nurse/ExtraTests';
+import { AddExtraSheet } from '@/components/nurse/ExtraTests';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
-import { PlanCard } from '@/components/nurse/PlanCard';
 import {
   AddChildSheet,
   ClosePlanSheet,
@@ -15,31 +14,16 @@ import {
   HospitalIdSheet,
   StartPregnancySheet,
 } from '@/components/nurse/PlanSheets';
+import { DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
+import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
-import {
-  addDays,
-  addMonths,
-  DEPARTMENT_LABEL,
-  formatDate,
-  formatMobile,
-  nextScheduledVisit,
-} from '@/lib/nurse-schedule';
+import { buildTimeline, formatDate } from '@/lib/nurse-schedule';
 
 export default function NursePatientPage() {
   const { status } = useNurse();
   if (status === 'loading' || status === 'error') return <NurseLoading />;
   if (status === 'signed_out') return <NurseLogin />;
   return <PatientScreen />;
-}
-
-// The schedule's next visit across this patient's plans.
-function suggestNextVisit(view) {
-  let best = null;
-  for (const plan of view.plans) {
-    const visit = nextScheduledVisit(plan, view.today);
-    if (visit && (!best || visit.fromDate < best.date)) best = { date: visit.fromDate, planId: plan.id, title: visit.titleEn };
-  }
-  return best;
 }
 
 function initialDoctor(view, hospitalDoctors) {
@@ -49,6 +33,33 @@ function initialDoctor(view, hospitalDoctors) {
     return { careDoctorId: current.careDoctorId, department: current.department, key: current.careDoctorId, name: current.name };
   }
   return { careDoctorId: null, department: current.department || 'general', key: 'other', name: current.name };
+}
+
+// Next visit date to start with: the date already planned for the next
+// visit, else the next visit the patient already has.
+function initialNextDate(view) {
+  const { cards, nextKey } = buildTimeline(view, {}, {}, view.today);
+  const planned = cards.find((card) => card.key === nextKey)?.date;
+  if (planned && planned >= view.today) return planned;
+  const last = view.lastFollowup?.nextDate;
+  return last && last >= view.today ? last : '';
+}
+
+// Plan / ID actions answer with the basic page (no extra tests or dates).
+function mergeView(current, next) {
+  return {
+    ...next,
+    extraItems: next.extraItems ?? current?.extraItems ?? [],
+    visitDates: next.visitDates ?? current?.visitDates ?? [],
+  };
+}
+
+function toggle(map, key, savedStatus, next) {
+  const updated = { ...map };
+  const target = next ?? null;
+  if (target === (savedStatus ?? null)) delete updated[key];
+  else updated[key] = target === null ? 'clear' : target;
+  return updated;
 }
 
 function PatientScreen() {
@@ -61,8 +72,8 @@ function PatientScreen() {
   const [loadError, setLoadError] = useState('');
   const [doctor, setDoctor] = useState({ careDoctorId: null, department: 'general', key: '', name: '' });
   const [changes, setChanges] = useState({});
+  const [dates, setDates] = useState({});
   const [nextDate, setNextDate] = useState('');
-  const [suggestion, setSuggestion] = useState(null);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -70,16 +81,11 @@ function PatientScreen() {
   const [sheet, setSheet] = useState(null);
   const [removingId, setRemovingId] = useState(null);
   const savedRef = useRef(null);
-  // Plan / visit / ID actions answer without the extra tests (they do not
-  // change them), so keep the list we already have.
-  const keepExtras = (next) => setView((current) => ({ ...next, extraItems: next.extraItems ?? current?.extraItems ?? [] }));
 
-  const applyFreshView = useCallback((nextView) => {
-    setView(nextView);
-    setDoctor(initialDoctor(nextView, hospitalDoctors));
-    const next = suggestNextVisit(nextView);
-    setSuggestion(next);
-    setNextDate(next?.date || '');
+  const applyFreshView = useCallback((loaded) => {
+    setView(loaded);
+    setDoctor(initialDoctor(loaded, hospitalDoctors));
+    setNextDate(initialNextDate(loaded));
   }, [hospitalDoctors]);
 
   useEffect(() => {
@@ -97,7 +103,7 @@ function PatientScreen() {
     };
   }, [applyFreshView, patientId]);
 
-  const dirty = Object.keys(changes).length > 0 || note.trim().length > 0;
+  const dirty = Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || note.trim().length > 0;
   useEffect(() => {
     if (!dirty) return undefined;
     const warn = (event) => {
@@ -123,50 +129,30 @@ function PatientScreen() {
   const today = view.today;
   const patient = view.patient;
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
-  const department = doctor.department || 'general';
-  const changeCount = Object.keys(changes).length;
+  const { cards, nextKey } = buildTimeline(view, changes, dates, today);
+  const nextCard = cards.find((card) => card.key === nextKey) || null;
+  const changeCount = Object.keys(changes).length + Object.keys(dates).length;
   // Arrived from "New pregnancy" on the search screen.
   const notice = savedNotice || (router.query.started === 'pregnancy' && hasPregnancy
     ? 'Pregnancy started. Her DrJiva app now shows the baby’s week.'
     : '');
 
-  // Staging a tick. Choosing what is already saved removes the staged change.
+  const touch = () => setSavedNotice('');
   const toggleItem = (planId, item, next) => {
-    const key = `${planId}:${item.id}`;
-    setSavedNotice('');
-    setChanges((current) => {
-      const updated = { ...current };
-      const target = next ?? null;
-      if (target === (item.status ?? null)) delete updated[key];
-      else updated[key] = target === null ? 'clear' : target;
-      return updated;
-    });
+    touch();
+    setChanges((current) => toggle(current, `${planId}:${item.id}`, item.status, next));
   };
-
-  const chooseDoctor = (key) => {
-    setSavedNotice('');
-    if (key === 'other') {
-      setDoctor({ careDoctorId: null, department: 'general', key: 'other', name: '' });
-      return;
-    }
-    if (key === '') {
-      setDoctor({ careDoctorId: null, department: 'general', key: '', name: '' });
-      return;
-    }
-    const picked = hospitalDoctors.find((item) => item.id === key);
-    if (picked) setDoctor({ careDoctorId: picked.id, department: picked.department, key: picked.id, name: picked.name });
-  };
-
   const toggleExtra = (item, next) => {
-    const key = extraKey(item);
-    setSavedNotice('');
-    setChanges((current) => {
-      const updated = { ...current };
-      const target = next ?? null;
-      if (target === (item.status ?? null)) delete updated[key];
-      else updated[key] = target === null ? 'clear' : target;
-      return updated;
-    });
+    touch();
+    setChanges((current) => toggle(current, `extra:${item.id}`, item.status, next));
+  };
+  const setCardDate = (key, date) => {
+    touch();
+    setDates((current) => ({ ...current, [key]: date }));
+  };
+  const changeNextDate = (date) => {
+    touch();
+    setNextDate(date || '');
   };
 
   const removeExtra = async (item) => {
@@ -174,7 +160,8 @@ function PatientScreen() {
     setRemovingId(item.id);
     setSaveError('');
     try {
-      setView(await nurseRequest('/api/nurse/extra', { body: { action: 'remove', itemId: item.id }, method: 'POST' }));
+      const next = await nurseRequest('/api/nurse/extra', { body: { action: 'remove', itemId: item.id }, method: 'POST' });
+      setView((current) => mergeView(current, next));
     } catch (error) {
       setSaveError(error.message);
     } finally {
@@ -184,10 +171,7 @@ function PatientScreen() {
 
   const onPlanChanged = (nextView) => {
     setSheet(null);
-    keepExtras(nextView);
-    const next = suggestNextVisit(nextView);
-    setSuggestion(next);
-    if (next && !nextDate) setNextDate(next.date);
+    setView((current) => mergeView(current, nextView));
   };
 
   const save = async () => {
@@ -205,22 +189,37 @@ function PatientScreen() {
       const extraItems = entries
         .filter(([key]) => key.startsWith('extra:'))
         .map(([key, status]) => ({ id: key.slice('extra:'.length), status }));
-      const planId = suggestion?.planId || (view.plans.length === 1 ? view.plans[0].id : null);
+      const visitDates = Object.entries(dates)
+        .filter(([key]) => key.startsWith('visit:'))
+        .map(([key, date]) => {
+          const [, planId, visitId] = key.split(':');
+          return { date, planId, visitId };
+        });
+      // The next visit's card keeps the date the patient was given.
+      if (nextCard?.kind === 'visit' && nextDate && nextDate !== nextCard.date) {
+        visitDates.push({ date: nextDate, planId: nextCard.plan.id, visitId: nextCard.visit.id });
+      }
+      const extraDates = Object.entries(dates)
+        .filter(([key, date]) => key.startsWith('extra:') && date)
+        .map(([key, date]) => ({ date, id: key.slice('extra:'.length) }));
       const saved = await nurseRequest('/api/nurse/visit', {
         body: {
           careDoctorId: doctor.careDoctorId,
           doctorName: doctor.careDoctorId ? null : doctor.name,
+          extraDates,
           extraItems,
           items,
           nextDate: nextDate || null,
           note,
           patientId: patient.id,
-          planId,
+          planId: nextCard?.plan?.id || (view.plans.length === 1 ? view.plans[0].id : null),
+          visitDates,
         },
         method: 'POST',
       });
-      keepExtras(saved);
+      setView((current) => mergeView(current, saved));
       setChanges({});
+      setDates({});
       setNote('');
       setSavedNotice(
         nextDate
@@ -239,8 +238,8 @@ function PatientScreen() {
   const footer = (
     <div className="nurse-save-bar">
       {saveError ? <p className="nurse-save-error" role="alert">{saveError}</p> : null}
-      <button className="primary-button nurse-big-button" disabled={saving || (doctor.key === 'other' && !doctor.name.trim())} type="button" onClick={() => void save()}>
-        {saving ? 'Saving…' : changeCount ? `Save visit · ${changeCount} ${changeCount === 1 ? 'tick' : 'ticks'}` : 'Save visit'}
+      <button className="primary-button nurse-big-button" disabled={saving} type="button" onClick={() => void save()}>
+        {saving ? 'Saving…' : changeCount ? `Save visit · ${changeCount} ${changeCount === 1 ? 'change' : 'changes'}` : 'Save visit'}
       </button>
     </div>
   );
@@ -256,108 +255,65 @@ function PatientScreen() {
         </div>
       ) : null}
 
-      <section className="nurse-patient-head" aria-labelledby="patient-name">
-        <h1 className="nurse-title" id="patient-name">{patient.name || 'Patient'}</h1>
-        <p className="nurse-patient-meta">
-          <span>+91 {formatMobile(patient.mobile)}</span>
-          <button className="nurse-link-button" type="button" onClick={() => setSheet({ type: 'hospitalId' })}>
-            {patient.hospitalPatientId ? `ID ${patient.hospitalPatientId}` : 'Add hospital ID'} <Pencil aria-hidden="true" size={14} />
-          </button>
+      <PatientHeader doctor={doctor} onEditDoctor={() => setSheet({ type: 'doctor' })} onEditId={() => setSheet({ type: 'hospitalId' })} patient={patient} />
+      {view.lastFollowup ? (
+        <p className="nurse-muted nurse-last-update">
+          Last updated {formatDate(view.lastFollowup.visitDate)} by {view.lastFollowup.nurseName}
         </p>
-        {view.lastFollowup ? (
-          <p className="nurse-muted">
-            Last update {formatDate(view.lastFollowup.visitDate)} by {view.lastFollowup.nurseName}
-            {view.lastFollowup.nextDate ? ` · next visit ${formatDate(view.lastFollowup.nextDate)}` : ''}
-          </p>
-        ) : <p className="nurse-muted">No follow-up saved yet at this hospital.</p>}
-      </section>
+      ) : null}
 
-      <section className="nurse-card" aria-labelledby="doctor-heading">
-        <h2 className="nurse-card-title" id="doctor-heading">Doctor</h2>
-        <label className="nurse-field">
-          <span className="sr-only">Doctor seen today</span>
-          <div className="nurse-input-wrap nurse-select-wrap">
-            <select value={doctor.key} onChange={(event) => chooseDoctor(event.target.value)}>
-              <option value="">Not chosen</option>
-              {hospitalDoctors.map((item) => (
-                <option key={item.id} value={item.id}>{item.name} · {DEPARTMENT_LABEL[item.department]}</option>
-              ))}
-              <option value="other">Other doctor…</option>
-            </select>
-          </div>
-        </label>
-        {doctor.key === 'other' ? (
-          <label className="nurse-field">
-            <span>Doctor&apos;s name</span>
-            <div className="nurse-input-wrap">
-              <input
-                maxLength={80}
-                placeholder="Name from the case sheet"
-                value={doctor.name}
-                onChange={(event) => setDoctor({ careDoctorId: null, department: 'general', key: 'other', name: event.target.value })}
-              />
-            </div>
-          </label>
-        ) : null}
-        {view.doctor?.source === 'bill' && doctor.name === view.doctor.name ? (
-          <p className="nurse-muted">Filled in from the last pharmacy bill.</p>
-        ) : null}
-
-        {!hasPregnancy ? (
-          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
-            <HeartPulse aria-hidden="true" size={22} /> Pregnancy confirmed – start schedule
-          </button>
-        ) : null}
-        {department === 'pediatrics' ? (
-          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'child' })}>
-            <Baby aria-hidden="true" size={22} /> Add child
-          </button>
-        ) : null}
-      </section>
+      {!hasPregnancy || doctor.department === 'pediatrics' ? (
+        <div className="nurse-start-row">
+          {!hasPregnancy ? (
+            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
+              <HeartPulse aria-hidden="true" size={20} /> Pregnancy confirmed
+            </button>
+          ) : null}
+          {doctor.department === 'pediatrics' ? (
+            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'child' })}>
+              <Baby aria-hidden="true" size={20} /> Add child
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {view.plans.map((plan) => (
-        <PlanCard
-          changes={changes}
-          everyVisit={view.everyVisit}
-          key={plan.id}
-          onAction={(type, target) => setSheet({ plan: target, type })}
-          onToggle={toggleItem}
-          plan={plan}
-          today={today}
-        />
+        <PlanSummary everyVisit={view.everyVisit} key={plan.id} onAction={(type, target) => setSheet({ plan: target, type })} patientName={patient.name} plan={plan} today={today} />
       ))}
 
-      <ExtraTestsCard
-        changes={changes}
-        items={view.extraItems || []}
-        nextDate={nextDate}
-        onAdd={() => setSheet({ type: 'extra' })}
-        onRemove={(item) => void removeExtra(item)}
-        onToggle={toggleExtra}
-        removingId={removingId}
-      />
-
-      <section className="nurse-card" aria-labelledby="next-heading">
-        <h2 className="nurse-card-title" id="next-heading">Next follow-up</h2>
-        <label className="nurse-field">
-          <span className="sr-only">Next visit date</span>
-          <div className="nurse-input-wrap">
-            <input min={today} max={addDays(today, 400)} type="date" value={nextDate} onChange={(event) => setNextDate(event.target.value)} />
+      {cards.length ? (
+        <section className="nurse-section" aria-labelledby="timeline-heading">
+          <div className="nurse-list-head">
+            <h2 className="nurse-card-title" id="timeline-heading">Visits, scans and tests</h2>
+            <span className="nurse-muted">Swipe sideways</span>
           </div>
-        </label>
-        <div className="nurse-quick-dates" role="group" aria-label="Quick dates">
-          <button aria-pressed={nextDate === addDays(today, 7)} type="button" onClick={() => setNextDate(addDays(today, 7))}>+1 week</button>
-          <button aria-pressed={nextDate === addDays(today, 14)} type="button" onClick={() => setNextDate(addDays(today, 14))}>+2 weeks</button>
-          <button aria-pressed={nextDate === addMonths(today, 1)} type="button" onClick={() => setNextDate(addMonths(today, 1))}>+1 month</button>
-        </div>
-        {suggestion ? (
-          <p className="nurse-muted">Schedule&apos;s next visit: {suggestion.title}, from {formatDate(suggestion.date)}. Use the date on the case sheet.</p>
-        ) : null}
-        {nextDate ? (
-          <button className="nurse-link-button" type="button" onClick={() => setNextDate('')}>No next visit</button>
-        ) : null}
+          <Timeline
+            cards={cards}
+            changes={changes}
+            dates={dates}
+            multiPlan={view.plans.length > 1}
+            nextDate={nextDate}
+            nextKey={nextKey}
+            onDate={setCardDate}
+            onNextDate={changeNextDate}
+            onRemoveExtra={(item) => void removeExtra(item)}
+            onToggleExtra={toggleExtra}
+            onToggleItem={toggleItem}
+            removingId={removingId}
+            today={today}
+          />
+        </section>
+      ) : null}
+
+      {!nextCard ? <NextVisitCard nextDate={nextDate} onNextDate={changeNextDate} today={today} /> : null}
+
+      <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'extra' })}>
+        <ClipboardPlus aria-hidden="true" size={20} /> Add test or scan from the case sheet
+      </button>
+
+      <section className="nurse-card" aria-labelledby="note-heading">
         <label className="nurse-field">
-          <span>Note for the patient <em>optional</em></span>
+          <span id="note-heading">Note for the patient <em>optional</em></span>
           <textarea
             className="nurse-textarea"
             maxLength={300}
@@ -370,6 +326,18 @@ function PatientScreen() {
         </label>
       </section>
 
+      {sheet?.type === 'doctor' ? (
+        <DoctorSheet
+          doctor={doctor}
+          doctors={hospitalDoctors}
+          onClose={() => setSheet(null)}
+          onSave={(picked) => {
+            touch();
+            setDoctor(picked);
+            setSheet(null);
+          }}
+        />
+      ) : null}
       {sheet?.type === 'pregnancy' ? (
         <StartPregnancySheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
@@ -388,7 +356,7 @@ function PatientScreen() {
           onClose={() => setSheet(null)}
           onDone={(nextView) => {
             setSheet(null);
-            setView(nextView);
+            setView((current) => mergeView(current, nextView));
           }}
           patientId={patient.id}
           today={today}

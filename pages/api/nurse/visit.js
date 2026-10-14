@@ -2,7 +2,8 @@ import { callCare, dateOrNull, nurseRoute, text, uuidOrNull } from '@/lib/server
 
 const STATUSES = new Set(['done', 'not_needed', 'clear']);
 
-// "Save": checklist ticks + extra-test ticks + next follow-up date + note.
+// "Save visit": ticks, extra-test ticks, dates set on the timeline,
+// the next visit date and the note.
 export default nurseRoute(['POST'], async (request, response, nurse) => {
   const body = request.body || {};
   const patientId = uuidOrNull(body.patientId);
@@ -16,10 +17,22 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
   const cleanExtras = extras
     .map((item) => ({ id: uuidOrNull(item?.id), status: item?.status }))
     .filter((item) => item.id && STATUSES.has(item.status));
-  if (cleanItems.length !== items.length || cleanExtras.length !== extras.length) {
+  const visitDates = (Array.isArray(body.visitDates) ? body.visitDates.slice(0, 60) : [])
+    .map((entry) => ({ planId: uuidOrNull(entry?.planId), visitId: uuidOrNull(entry?.visitId), date: dateOrNull(entry?.date) }));
+  const extraDates = (Array.isArray(body.extraDates) ? body.extraDates.slice(0, 40) : [])
+    .map((entry) => ({ id: uuidOrNull(entry?.id), date: dateOrNull(entry?.date) }));
+  if (
+    cleanItems.length !== items.length ||
+    cleanExtras.length !== extras.length ||
+    visitDates.some((entry) => !entry.planId || !entry.visitId) ||
+    extraDates.some((entry) => !entry.id || !entry.date)
+  ) {
     return response.status(400).json({ error: 'The checklist could not be read. Refresh the page and try again.' });
   }
 
+  if (visitDates.length || extraDates.length) {
+    await callCare('care_nurse_set_dates', { p_nurse_id: nurse.id, p_patient_id: patientId, p_visits: visitDates, p_extras: extraDates });
+  }
   if (cleanExtras.length) {
     await callCare('care_nurse_set_extra_items', { p_nurse_id: nurse.id, p_patient_id: patientId, p_items: cleanExtras });
   }
@@ -35,8 +48,8 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
     p_plan_id: uuidOrNull(body.planId),
   });
 
-  // Extra tests only change when ticked; then send the fresh list too.
-  if (cleanExtras.length) {
+  // Extra tests and dates change only when touched; then send them too.
+  if (cleanExtras.length || visitDates.length || extraDates.length) {
     return response.status(200).json(await callCare('care_nurse_patient_v2', { p_nurse_id: nurse.id, p_patient_id: patientId }));
   }
   return response.status(200).json(view);
