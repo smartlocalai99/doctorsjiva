@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import { Manrope, Source_Serif_4 } from 'next/font/google';
 
+import { AppManifest } from '@/components/AppManifest';
 import { RouteGuard } from '@/components/AppShell';
 import { PwaRegistration } from '@/components/PwaRegistration';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -12,6 +13,7 @@ const sourceSerif = Source_Serif_4({ subsets: ['latin'], variable: '--font-displ
 export default function App({ Component, pageProps }) {
   return (
     <div className={`${manrope.variable} ${sourceSerif.variable}`}>
+      <AppManifest />
       <AuthProvider>
         <WorkspaceProvider>
           <RouteGuard>

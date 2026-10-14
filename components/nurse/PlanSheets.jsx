@@ -115,7 +115,8 @@ export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
     let patientId = null;
     try {
       const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: motherName }, method: 'POST' });
-      patientId = view.patient.id;
+      const patient = view.patient;
+      patientId = patient.id;
       await nurseRequest('/api/nurse/plan', {
         body: {
           action: 'start_pregnancy',
@@ -128,7 +129,7 @@ export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
         },
         method: 'POST',
       });
-      onStarted(patientId);
+      onStarted(patient);
     } catch (submitError) {
       setError(submitError.message);
       if (submitError.code === 'pregnancy_exists') setExistingId(patientId);

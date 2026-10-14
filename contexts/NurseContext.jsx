@@ -1,4 +1,6 @@
-import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { toPatients } from '@/lib/nurse-directory';
 
 const NurseContext = createContext(null);
 
@@ -24,10 +26,46 @@ export async function nurseRequest(path, { method = 'GET', body } = {}) {
   return data;
 }
 
+const NO_DIRECTORY = { loadedAt: 0, patients: [], status: 'idle' };
+
 export function NurseProvider({ children }) {
   // profile = { nurse, hospital, doctors, today }
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState('loading');
+  // The hospital's patient list: fetched once per session (lists and
+  // suggestions all use this copy), refreshed only on request.
+  const [directory, setDirectory] = useState(NO_DIRECTORY);
+  const directoryRequested = useRef(false);
+
+  const loadDirectory = useCallback(async ({ fresh = false } = {}) => {
+    directoryRequested.current = true;
+    try {
+      const data = await nurseRequest(`/api/nurse/patients${fresh ? '?fresh=1' : ''}`);
+      setDirectory({ loadedAt: data.loadedAt, patients: toPatients(data.patients), status: 'ready' });
+    } catch {
+      setDirectory((current) => ({ ...current, status: current.patients.length ? 'ready' : 'error' }));
+    }
+  }, []);
+
+  const ensureDirectory = useCallback(() => {
+    if (!directoryRequested.current) void loadDirectory();
+  }, [loadDirectory]);
+
+  // A patient just added or opened goes to the top without a reload.
+  const rememberPatient = useCallback((patient) => {
+    if (!patient?.id) return;
+    setDirectory((current) => {
+      const existing = current.patients.find((item) => item.id === patient.id);
+      const [row] = toPatients([[
+        patient.id,
+        patient.name ?? existing?.name ?? '',
+        String(patient.mobile ?? existing?.mobile ?? '').replace(/^\+91/, ''),
+        patient.hospitalPatientId ?? existing?.hospitalId ?? '',
+        patient.lastSeen ?? existing?.lastSeen ?? '',
+      ]]);
+      return { ...current, patients: [row, ...current.patients.filter((item) => item.id !== patient.id)] };
+    });
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -73,11 +111,16 @@ export function NurseProvider({ children }) {
 
   const logout = useCallback(async () => {
     await nurseRequest('/api/nurse/logout', { body: {}, method: 'POST' }).catch(() => undefined);
+    directoryRequested.current = false;
+    setDirectory(NO_DIRECTORY);
     setProfile(null);
     setStatus('signed_out');
   }, []);
 
-  const value = useMemo(() => ({ login, logout, profile, refresh, status }), [login, logout, profile, refresh, status]);
+  const value = useMemo(
+    () => ({ directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
+    [directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
+  );
   return <NurseContext value={value}>{children}</NurseContext>;
 }
 

@@ -5,10 +5,11 @@ export default function Document() {
     <Html lang="en">
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <meta name="application-name" content="DRJIVA Doctors" />
         <meta name="theme-color" content="#2E7EBC" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="description" content="Create and manage trusted health content for DRJIVA." />
-        <link rel="manifest" href="/manifest.webmanifest" />
+        {/* The manifest link is per section (doctors / nurses): see components/AppManifest. */}
         <link rel="icon" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </Head>

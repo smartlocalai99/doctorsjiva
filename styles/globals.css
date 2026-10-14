@@ -2096,4 +2096,91 @@ textarea:focus-visible {
   .nurse-login-mark {
     @apply size-[72px];
   }
+
+  /* Find a patient: search with suggestions, patient lists */
+  .nurse-input-icon {
+    @apply shrink-0 text-muted;
+  }
+
+  .nurse-input-clear {
+    @apply -mr-2 grid size-10 shrink-0 place-items-center rounded-full text-muted transition hover:bg-canvas;
+  }
+
+  .nurse-suggestions {
+    @apply grid overflow-hidden rounded-2xl border border-line bg-white shadow-[0_6px_20px_rgba(18,20,22,0.08)];
+  }
+
+  .nurse-suggestions .nurse-patient-row + .nurse-patient-row {
+    @apply border-t border-line;
+  }
+
+  .nurse-suggestions .nurse-patient-row[aria-selected='true'] {
+    @apply bg-brand-soft;
+  }
+
+  .nurse-list-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .nurse-patient-list {
+    @apply grid overflow-hidden rounded-2xl border border-line bg-white;
+  }
+
+  .nurse-patient-list > * + * {
+    @apply border-t border-line;
+  }
+
+  .nurse-patient-row {
+    @apply flex min-h-16 items-center gap-3 px-4 py-3 text-ink transition hover:bg-canvas;
+  }
+
+  .nurse-avatar {
+    @apply grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-extrabold text-brand;
+  }
+
+  .nurse-patient-row-main {
+    @apply grid min-w-0 flex-1 gap-0.5;
+  }
+
+  .nurse-patient-row-main strong {
+    @apply truncate text-base font-extrabold leading-snug;
+  }
+
+  .nurse-patient-row-main span {
+    @apply truncate text-sm font-semibold text-muted;
+  }
+
+  .nurse-patient-row-date {
+    @apply shrink-0 text-sm font-bold text-muted;
+  }
+
+  .nurse-patient-row-chevron {
+    @apply shrink-0 text-muted;
+  }
+
+  .nurse-patient-row-skeleton .nurse-avatar,
+  .nurse-patient-row-skeleton i {
+    @apply animate-pulse bg-slate-100;
+  }
+
+  .nurse-patient-row-skeleton i {
+    @apply block h-3.5 rounded-full;
+  }
+
+  .nurse-patient-row-skeleton i:first-child {
+    @apply w-2/5;
+  }
+
+  .nurse-patient-row-skeleton i:last-child {
+    @apply mt-1.5 w-3/5;
+  }
+
+  /* Extra tests: a third, small "remove" button next to Done / Not needed */
+  .nurse-check-actions:has(.nurse-choice-remove) {
+    grid-template-columns: 1fr 1fr 3rem;
+  }
+
+  .nurse-choice-remove {
+    @apply px-0 text-muted;
+  }
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { AddExtraSheet, ExtraTestsCard, extraKey } from '@/components/nurse/ExtraTests';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PlanCard } from '@/components/nurse/PlanCard';
@@ -67,7 +68,11 @@ function PatientScreen() {
   const [saveError, setSaveError] = useState('');
   const [savedNotice, setSavedNotice] = useState('');
   const [sheet, setSheet] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
   const savedRef = useRef(null);
+  // Plan / visit / ID actions answer without the extra tests (they do not
+  // change them), so keep the list we already have.
+  const keepExtras = (next) => setView((current) => ({ ...next, extraItems: next.extraItems ?? current?.extraItems ?? [] }));
 
   const applyFreshView = useCallback((nextView) => {
     setView(nextView);
@@ -152,9 +157,34 @@ function PatientScreen() {
     if (picked) setDoctor({ careDoctorId: picked.id, department: picked.department, key: picked.id, name: picked.name });
   };
 
+  const toggleExtra = (item, next) => {
+    const key = extraKey(item);
+    setSavedNotice('');
+    setChanges((current) => {
+      const updated = { ...current };
+      const target = next ?? null;
+      if (target === (item.status ?? null)) delete updated[key];
+      else updated[key] = target === null ? 'clear' : target;
+      return updated;
+    });
+  };
+
+  const removeExtra = async (item) => {
+    if (!window.confirm(`Remove “${item.label}”? Only do this if it was added by mistake.`)) return;
+    setRemovingId(item.id);
+    setSaveError('');
+    try {
+      setView(await nurseRequest('/api/nurse/extra', { body: { action: 'remove', itemId: item.id }, method: 'POST' }));
+    } catch (error) {
+      setSaveError(error.message);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const onPlanChanged = (nextView) => {
     setSheet(null);
-    setView(nextView);
+    keepExtras(nextView);
     const next = suggestNextVisit(nextView);
     setSuggestion(next);
     if (next && !nextDate) setNextDate(next.date);
@@ -165,15 +195,22 @@ function PatientScreen() {
     setSaveError('');
     setSavedNotice('');
     try {
-      const items = Object.entries(changes).map(([key, status]) => {
-        const [planId, itemId] = key.split(':');
-        return { itemId, planId, status };
-      });
+      const entries = Object.entries(changes);
+      const items = entries
+        .filter(([key]) => !key.startsWith('extra:'))
+        .map(([key, status]) => {
+          const [planId, itemId] = key.split(':');
+          return { itemId, planId, status };
+        });
+      const extraItems = entries
+        .filter(([key]) => key.startsWith('extra:'))
+        .map(([key, status]) => ({ id: key.slice('extra:'.length), status }));
       const planId = suggestion?.planId || (view.plans.length === 1 ? view.plans[0].id : null);
       const saved = await nurseRequest('/api/nurse/visit', {
         body: {
           careDoctorId: doctor.careDoctorId,
           doctorName: doctor.careDoctorId ? null : doctor.name,
+          extraItems,
           items,
           nextDate: nextDate || null,
           note,
@@ -182,7 +219,7 @@ function PatientScreen() {
         },
         method: 'POST',
       });
-      setView(saved);
+      keepExtras(saved);
       setChanges({});
       setNote('');
       setSavedNotice(
@@ -290,6 +327,16 @@ function PatientScreen() {
         />
       ))}
 
+      <ExtraTestsCard
+        changes={changes}
+        items={view.extraItems || []}
+        nextDate={nextDate}
+        onAdd={() => setSheet({ type: 'extra' })}
+        onRemove={(item) => void removeExtra(item)}
+        onToggle={toggleExtra}
+        removingId={removingId}
+      />
+
       <section className="nurse-card" aria-labelledby="next-heading">
         <h2 className="nurse-card-title" id="next-heading">Next follow-up</h2>
         <label className="nurse-field">
@@ -334,6 +381,18 @@ function PatientScreen() {
       ) : null}
       {sheet?.type === 'correct' ? (
         <CorrectDueDateSheet onClose={() => setSheet(null)} onDone={onPlanChanged} plan={sheet.plan} today={today} />
+      ) : null}
+      {sheet?.type === 'extra' ? (
+        <AddExtraSheet
+          nextDate={nextDate}
+          onClose={() => setSheet(null)}
+          onDone={(nextView) => {
+            setSheet(null);
+            setView(nextView);
+          }}
+          patientId={patient.id}
+          today={today}
+        />
       ) : null}
       {sheet?.type === 'hospitalId' ? (
         <HospitalIdSheet onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} />

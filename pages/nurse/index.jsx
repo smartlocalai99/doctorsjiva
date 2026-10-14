@@ -1,13 +1,18 @@
-import { HeartPulse, Search, UserPlus } from 'lucide-react';
+import { HeartPulse, Search, UserPlus, X } from 'lucide-react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
+import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
+import { searchPatients } from '@/lib/nurse-directory';
 import { formatMobile } from '@/lib/nurse-schedule';
+
+const RECENT_COUNT = 4;
 
 export default function NurseHomePage() {
   const { status } = useNurse();
@@ -30,13 +35,23 @@ function NurseOffline() {
   );
 }
 
+// A full mobile number (10 digits, optionally with 91 / +91).
+function mobileDigits(query) {
+  if (!/^[+\d\s()-]+$/.test(query)) return '';
+  const digits = query.replace(/\D/g, '');
+  if (digits.length === 10) return digits;
+  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+  return '';
+}
+
 function PatientSearch() {
   const router = useRouter();
-  const { profile } = useNurse();
-  const [mode, setMode] = useState('mobile');
+  const { directory, ensureDirectory, loadDirectory, profile, rememberPatient } = useNurse();
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState('');
+  const [hint, setHint] = useState('');
   const [notFound, setNotFound] = useState(null);
   const [addName, setAddName] = useState('');
   const [addMobile, setAddMobile] = useState('');
@@ -44,36 +59,68 @@ function PatientSearch() {
   const [adding, setAdding] = useState(false);
   const [pregnancyOpen, setPregnancyOpen] = useState(false);
 
-  const hospitalName = profile?.hospital?.name;
-  const canSearch = mode === 'mobile' ? query.length === 10 : query.trim().length > 0;
+  useEffect(() => {
+    ensureDirectory();
+  }, [ensureDirectory]);
 
-  const switchMode = (nextMode) => {
-    setMode(nextMode);
-    setQuery('');
+  const hospitalName = profile?.hospital?.name;
+  const patients = directory.patients;
+  const suggestions = useMemo(() => searchPatients(patients, query, 6), [patients, query]);
+  const typing = query.trim().length >= 2;
+  const listLoading = directory.status === 'idle' && !patients.length;
+
+  const openPatient = (patient) => void router.push(`/nurse/patient/${patient.id}`);
+
+  const changeQuery = (value) => {
+    setQuery(value);
+    setActiveIndex(-1);
     setNotFound(null);
+    setHint('');
     setError('');
   };
 
   const search = async (event) => {
     event.preventDefault();
-    if (!canSearch) return;
+    const q = query.trim();
+    if (!q) return;
+    if (activeIndex >= 0 && suggestions[activeIndex]) return openPatient(suggestions[activeIndex]);
+    if (suggestions.length === 1) return openPatient(suggestions[0]);
+    const mobile = mobileDigits(q);
+    if (suggestions.length > 1 && !mobile) {
+      setHint('More than one patient matches. Tap the right one in the list.');
+      return;
+    }
+    // Not in the list: exact lookup by full mobile number or hospital ID.
     setSearching(true);
     setError('');
     setNotFound(null);
     try {
-      const result = await nurseRequest('/api/nurse/find', { body: { query }, method: 'POST' });
+      const result = await nurseRequest('/api/nurse/find', { body: { query: mobile || q }, method: 'POST' });
       if (result.found) {
         await router.push(`/nurse/patient/${result.patientId}`);
         return;
       }
-      setNotFound({ mode, query });
-      setAddMobile(mode === 'mobile' ? query : '');
-      setAddHospitalId(mode === 'hospitalId' ? query.trim() : '');
+      setNotFound({ mobile, query: q });
+      setAddMobile(mobile);
+      setAddHospitalId(mobile ? '' : q);
       setAddName('');
     } catch (searchError) {
       setError(searchError.message);
     } finally {
       setSearching(false);
+    }
+  };
+
+  const onKeyDown = (event) => {
+    if (!typing || !suggestions.length) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex((index) => (index + 1) % suggestions.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex((index) => (index <= 0 ? suggestions.length - 1 : index - 1));
+    } else if (event.key === 'Escape') {
+      changeQuery('');
     }
   };
 
@@ -86,6 +133,7 @@ function PatientSearch() {
         body: { hospitalPatientId: addHospitalId, mobile: addMobile, name: addName },
         method: 'POST',
       });
+      rememberPatient({ ...view.patient, lastSeen: profile?.today });
       await router.push(`/nurse/patient/${view.patient.id}`);
     } catch (addError) {
       setError(addError.message);
@@ -98,39 +146,59 @@ function PatientSearch() {
       <Head><title>Find patient · DRJIVA Nurse</title></Head>
       <section className="nurse-section" aria-labelledby="find-heading">
         <h1 className="nurse-title" id="find-heading">Find a patient</h1>
-        <p className="nurse-lead">Type the full number. Only {hospitalName} patients show up.</p>
+        <p className="nurse-lead">Type a name, mobile number or hospital ID.</p>
 
-        <div className="nurse-segment" role="tablist" aria-label="Search by">
-          <button aria-selected={mode === 'mobile'} role="tab" type="button" onClick={() => switchMode('mobile')}>
-            Mobile number
-          </button>
-          <button aria-selected={mode === 'hospitalId'} role="tab" type="button" onClick={() => switchMode('hospitalId')}>
-            Hospital ID
-          </button>
-        </div>
-
-        <form className="nurse-search" onSubmit={search}>
-          <label className="nurse-field">
-            <span className="sr-only">{mode === 'mobile' ? '10-digit mobile number' : 'Hospital patient ID (UHID / MRN)'}</span>
+        <form className="nurse-search" onSubmit={search} role="search">
+          <div className="nurse-field">
+            <label className="sr-only" htmlFor="nurse-find">Name, mobile number or hospital ID</label>
             <div className="nurse-input-wrap">
-              {mode === 'mobile' ? <span className="nurse-input-prefix">+91</span> : null}
+              <Search aria-hidden="true" className="nurse-input-icon" size={20} />
               <input
+                aria-activedescendant={activeIndex >= 0 ? `suggestion-${activeIndex}` : undefined}
+                aria-autocomplete="list"
+                aria-controls="nurse-suggestions"
+                aria-expanded={typing && suggestions.length > 0}
                 autoComplete="off"
                 autoFocus
                 enterKeyHint="search"
-                inputMode={mode === 'mobile' ? 'numeric' : 'text'}
-                maxLength={mode === 'mobile' ? 10 : 40}
-                placeholder={mode === 'mobile' ? '10-digit mobile' : 'UHID / MRN'}
+                id="nurse-find"
+                maxLength={40}
+                placeholder="e.g. Lakshmi or 98490…"
+                role="combobox"
                 spellCheck={false}
                 value={query}
-                onChange={(event) => {
-                  setNotFound(null);
-                  setQuery(mode === 'mobile' ? event.target.value.replace(/\D/g, '').slice(0, 10) : event.target.value);
-                }}
+                onChange={(event) => changeQuery(event.target.value)}
+                onKeyDown={onKeyDown}
               />
+              {query ? (
+                <button aria-label="Clear search" className="nurse-input-clear" type="button" onClick={() => changeQuery('')}>
+                  <X aria-hidden="true" size={18} />
+                </button>
+              ) : null}
             </div>
-          </label>
-          <button className="primary-button nurse-big-button" type="submit" disabled={!canSearch || searching}>
+          </div>
+
+          {typing ? (
+            suggestions.length ? (
+              <div aria-label="Matching patients" className="nurse-suggestions" id="nurse-suggestions" role="listbox">
+                {suggestions.map((patient, index) => (
+                  <PatientRow
+                    id={`suggestion-${index}`}
+                    key={patient.id}
+                    option
+                    patient={patient}
+                    selected={index === activeIndex}
+                    showDate={false}
+                  />
+                ))}
+              </div>
+            ) : listLoading ? null : (
+              <p className="nurse-muted">No match in your patient list. Press Search to look up a full mobile number or hospital ID.</p>
+            )
+          ) : null}
+          {hint ? <p className="nurse-muted" role="status">{hint}</p> : null}
+
+          <button className="primary-button nurse-big-button" type="submit" disabled={!query.trim() || searching}>
             <Search aria-hidden="true" size={20} /> {searching ? 'Searching…' : 'Search'}
           </button>
         </form>
@@ -138,28 +206,12 @@ function PatientSearch() {
         {error ? <p className="error-banner" role="alert">{error}</p> : null}
       </section>
 
-      <section className="nurse-section" aria-label="New pregnancy">
-        <button className="nurse-action-button" type="button" onClick={() => setPregnancyOpen(true)}>
-          <HeartPulse aria-hidden="true" size={22} /> New pregnancy
-        </button>
-        <p className="nurse-muted">Doctor confirmed a pregnancy? Start it here with her mobile number.</p>
-      </section>
-
-      {pregnancyOpen ? (
-        <NewPregnancySheet
-          doctors={profile?.doctors || []}
-          onClose={() => setPregnancyOpen(false)}
-          onStarted={(patientId) => void router.push(`/nurse/patient/${patientId}?started=pregnancy`)}
-          today={profile?.today}
-        />
-      ) : null}
-
       {notFound ? (
         <section className="nurse-card" aria-labelledby="add-heading">
           <h2 className="nurse-card-title" id="add-heading">
-            {notFound.mode === 'mobile'
-              ? `No patient with ${formatMobile(notFound.query)} at ${hospitalName}`
-              : `No patient with ID ${notFound.query} at ${hospitalName}`}
+            {notFound.mobile
+              ? `No patient with ${formatMobile(notFound.mobile)} at ${hospitalName}`
+              : `No patient matches “${notFound.query}” at ${hospitalName}`}
           </h2>
           <p className="nurse-muted">Add them now. They will see their visits when they open DrJiva with this mobile number.</p>
           <form className="nurse-form" onSubmit={addPatient}>
@@ -198,6 +250,52 @@ function PatientSearch() {
             </button>
           </form>
         </section>
+      ) : null}
+
+      <section className="nurse-section" aria-label="New pregnancy">
+        <button className="nurse-action-button" type="button" onClick={() => setPregnancyOpen(true)}>
+          <HeartPulse aria-hidden="true" size={22} /> New pregnancy
+        </button>
+        <p className="nurse-muted">Doctor confirmed a pregnancy? Start it here with her mobile number.</p>
+      </section>
+
+      <section className="nurse-section" aria-labelledby="recent-heading">
+        <div className="nurse-list-head">
+          <h2 className="nurse-card-title" id="recent-heading">Recent patients</h2>
+          {patients.length > RECENT_COUNT ? (
+            <Link className="nurse-link-button" href="/nurse/patients">View all ({patients.length.toLocaleString('en-IN')})</Link>
+          ) : null}
+        </div>
+        {listLoading ? (
+          <div className="nurse-patient-list">
+            <PatientRowSkeleton />
+            <PatientRowSkeleton />
+            <PatientRowSkeleton />
+          </div>
+        ) : directory.status === 'error' && !patients.length ? (
+          <div className="nurse-card">
+            <p className="nurse-muted">The patient list could not load. Search still works.</p>
+            <button className="nurse-link-button" type="button" onClick={() => void loadDirectory({ fresh: true })}>Try again</button>
+          </div>
+        ) : patients.length ? (
+          <div className="nurse-patient-list">
+            {patients.slice(0, RECENT_COUNT).map((patient) => <PatientRow key={patient.id} patient={patient} />)}
+          </div>
+        ) : (
+          <p className="nurse-muted">No patients yet. Search a mobile number to add one.</p>
+        )}
+      </section>
+
+      {pregnancyOpen ? (
+        <NewPregnancySheet
+          doctors={profile?.doctors || []}
+          onClose={() => setPregnancyOpen(false)}
+          onStarted={(patient) => {
+            rememberPatient({ ...patient, lastSeen: profile?.today });
+            void router.push(`/nurse/patient/${patient.id}?started=pregnancy`);
+          }}
+          today={profile?.today}
+        />
       ) : null}
     </NurseFrame>
   );

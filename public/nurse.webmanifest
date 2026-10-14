@@ -1,0 +1,33 @@
+{
+  "name": "DRJIVA Nurse",
+  "short_name": "DRJIVA Nurse",
+  "description": "Patient follow-ups for hospital nurses.",
+  "id": "/nurse",
+  "start_url": "/nurse",
+  "scope": "/nurse",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F7F8",
+  "theme_color": "#2E7EBC",
+  "categories": ["medical", "health", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
