@@ -18,6 +18,7 @@ export async function nurseRequest(path, { method = 'GET', body } = {}) {
   if (!response.ok) {
     const error = new Error(data?.error || 'Something went wrong. Please try again.');
     error.status = response.status;
+    error.code = data?.code || null;
     throw error;
   }
   return data;

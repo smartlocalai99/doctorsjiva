@@ -86,6 +86,130 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
   );
 }
 
+// From the search screen, once the doctor has confirmed a pregnancy. Her
+// mobile number is the key: the patient is added (or found) and her
+// schedule starts in one go.
+export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
+  const gynecologists = doctors.filter((item) => item.department === 'gynecology');
+  const doctorOptions = gynecologists.length ? gynecologists : doctors;
+  const [mobile, setMobile] = useState('');
+  const [motherName, setMotherName] = useState('');
+  const [doctorKey, setDoctorKey] = useState(doctorOptions[0]?.id || '');
+  const [otherDoctor, setOtherDoctor] = useState('');
+  const [mode, setMode] = useState('lmp');
+  const [date, setDate] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [existingId, setExistingId] = useState(null);
+
+  const lmp = mode === 'lmp' ? date : date ? addDays(date, -280) : '';
+  const edd = mode === 'edd' ? date : date ? addDays(date, 280) : '';
+  const week = lmp ? Math.floor(daysBetween(lmp, today) / 7) : null;
+  const ready = mobile.length === 10 && motherName.trim().length >= 2 && date && (doctorKey !== 'other' || otherDoctor.trim());
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setExistingId(null);
+    let patientId = null;
+    try {
+      const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: motherName }, method: 'POST' });
+      patientId = view.patient.id;
+      await nurseRequest('/api/nurse/plan', {
+        body: {
+          action: 'start_pregnancy',
+          careDoctorId: doctorKey && doctorKey !== 'other' ? doctorKey : null,
+          doctorName: doctorKey === 'other' ? otherDoctor : null,
+          edd: mode === 'edd' ? date : null,
+          lmp: mode === 'lmp' ? date : null,
+          motherName,
+          patientId,
+        },
+        method: 'POST',
+      });
+      onStarted(patientId);
+    } catch (submitError) {
+      setError(submitError.message);
+      if (submitError.code === 'pregnancy_exists') setExistingId(patientId);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <NurseSheet title="New pregnancy" onClose={onClose}>
+      <form className="nurse-form" onSubmit={submit}>
+        <label className="nurse-field">
+          <span>Her mobile number</span>
+          <div className="nurse-input-wrap">
+            <span className="nurse-input-prefix">+91</span>
+            <input
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="10-digit mobile"
+              required
+              value={mobile}
+              onChange={(event) => setMobile(event.target.value.replace(/\D/g, '').slice(0, 10))}
+            />
+          </div>
+          <small>The number she opens DrJiva with.</small>
+        </label>
+        <label className="nurse-field">
+          <span>Mother&apos;s name</span>
+          <div className="nurse-input-wrap">
+            <input autoComplete="off" maxLength={80} required value={motherName} onChange={(event) => setMotherName(event.target.value)} />
+          </div>
+        </label>
+        <label className="nurse-field">
+          <span>Doctor who confirmed</span>
+          <div className="nurse-input-wrap nurse-select-wrap">
+            <select value={doctorKey} onChange={(event) => setDoctorKey(event.target.value)}>
+              {doctorOptions.map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+              <option value="other">Other doctor…</option>
+            </select>
+          </div>
+        </label>
+        {doctorKey === 'other' ? (
+          <label className="nurse-field">
+            <span>Doctor&apos;s name</span>
+            <div className="nurse-input-wrap">
+              <input maxLength={80} placeholder="Name from the case sheet" value={otherDoctor} onChange={(event) => setOtherDoctor(event.target.value)} />
+            </div>
+          </label>
+        ) : null}
+        <div className="nurse-segment" role="radiogroup" aria-label="Date known">
+          <button aria-checked={mode === 'lmp'} role="radio" type="button" onClick={() => { setMode('lmp'); setDate(''); }}>LMP date</button>
+          <button aria-checked={mode === 'edd'} role="radio" type="button" onClick={() => { setMode('edd'); setDate(''); }}>Due date (EDD)</button>
+        </div>
+        <label className="nurse-field">
+          <span>{mode === 'lmp' ? 'First day of last period (LMP)' : 'Expected due date (EDD)'}</span>
+          <div className="nurse-input-wrap">
+            <input
+              max={mode === 'lmp' ? today : addDays(today, 300)}
+              min={mode === 'lmp' ? addDays(today, -300) : addDays(today, -28)}
+              required
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+          </div>
+        </label>
+        {date ? <p className="nurse-preview">Week {Math.max(0, week)} today · Due {formatDate(edd)}</p> : null}
+        <SheetError message={error} />
+        {existingId ? (
+          <a className="nurse-link-button" href={`/nurse/patient/${existingId}`}>Open her page</a>
+        ) : null}
+        <button className="primary-button nurse-big-button" disabled={busy || !ready} type="submit">
+          {busy ? 'Starting…' : 'Start pregnancy'}
+        </button>
+      </form>
+    </NurseSheet>
+  );
+}
+
 export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
   const [childName, setChildName] = useState('');
   const [birthDate, setBirthDate] = useState('');

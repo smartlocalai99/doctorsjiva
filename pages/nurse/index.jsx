@@ -1,10 +1,11 @@
-import { Search, UserPlus } from 'lucide-react';
+import { HeartPulse, Search, UserPlus } from 'lucide-react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
+import { NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { formatMobile } from '@/lib/nurse-schedule';
 
@@ -41,6 +42,7 @@ function PatientSearch() {
   const [addMobile, setAddMobile] = useState('');
   const [addHospitalId, setAddHospitalId] = useState('');
   const [adding, setAdding] = useState(false);
+  const [pregnancyOpen, setPregnancyOpen] = useState(false);
 
   const hospitalName = profile?.hospital?.name;
   const canSearch = mode === 'mobile' ? query.length === 10 : query.trim().length > 0;
@@ -135,6 +137,22 @@ function PatientSearch() {
 
         {error ? <p className="error-banner" role="alert">{error}</p> : null}
       </section>
+
+      <section className="nurse-section" aria-label="New pregnancy">
+        <button className="nurse-action-button" type="button" onClick={() => setPregnancyOpen(true)}>
+          <HeartPulse aria-hidden="true" size={22} /> New pregnancy
+        </button>
+        <p className="nurse-muted">Doctor confirmed a pregnancy? Start it here with her mobile number.</p>
+      </section>
+
+      {pregnancyOpen ? (
+        <NewPregnancySheet
+          doctors={profile?.doctors || []}
+          onClose={() => setPregnancyOpen(false)}
+          onStarted={(patientId) => void router.push(`/nurse/patient/${patientId}?started=pregnancy`)}
+          today={profile?.today}
+        />
+      ) : null}
 
       {notFound ? (
         <section className="nurse-card" aria-labelledby="add-heading">

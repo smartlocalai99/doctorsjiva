@@ -120,6 +120,10 @@ function PatientScreen() {
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
   const department = doctor.department || 'general';
   const changeCount = Object.keys(changes).length;
+  // Arrived from "New pregnancy" on the search screen.
+  const notice = savedNotice || (router.query.started === 'pregnancy' && hasPregnancy
+    ? 'Pregnancy started. Her DrJiva app now shows the baby’s week.'
+    : '');
 
   // Staging a tick. Choosing what is already saved removes the staged change.
   const toggleItem = (planId, item, next) => {
@@ -208,9 +212,9 @@ function PatientScreen() {
     <NurseFrame backHref="/nurse" footer={footer}>
       <Head><title>{`${patient.name || 'Patient'} · DRJIVA Nurse`}</title></Head>
 
-      {savedNotice ? (
+      {notice ? (
         <div className="success-banner nurse-saved" ref={savedRef} role="status" tabIndex={-1}>
-          <span><CheckCircle2 aria-hidden="true" size={18} /> {savedNotice}</span>
+          <span><CheckCircle2 aria-hidden="true" size={18} /> {notice}</span>
           <Link href="/nurse">Next patient</Link>
         </div>
       ) : null}
@@ -262,7 +266,7 @@ function PatientScreen() {
           <p className="nurse-muted">Filled in from the last pharmacy bill.</p>
         ) : null}
 
-        {department === 'gynecology' && !hasPregnancy ? (
+        {!hasPregnancy ? (
           <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
             <HeartPulse aria-hidden="true" size={22} /> Pregnancy confirmed – start schedule
           </button>
