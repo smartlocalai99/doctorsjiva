@@ -75,7 +75,7 @@ export function NurseProvider({ children }) {
         String(patient.mobile ?? existing?.mobile ?? '').replace(/^\+91/, ''),
         patient.hospitalPatientId ?? existing?.hospitalId ?? '',
         patient.lastSeen ?? existing?.lastSeen ?? '',
-        patient.doctorId ?? existing?.doctorId ?? null,
+        [...new Set([...(existing?.doctorIds || []), ...(patient.doctorIds || []), ...(patient.doctorId ? [patient.doctorId] : [])])],
       ]]);
       return { ...current, patients: [row, ...current.patients.filter((item) => item.id !== patient.id)] };
     });

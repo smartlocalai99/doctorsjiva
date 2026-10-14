@@ -10,7 +10,7 @@ import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { NewChildSheet, NewCycleSheet, NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
-import { patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
+import { isPatientOf, patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
 import { formatMobile } from '@/lib/nurse-schedule';
 
 const RECENT_COUNT = 4;
@@ -73,8 +73,8 @@ function PatientSearch({ onChangeDoctor }) {
   const mine = useMemo(() => patientsOfDoctor(patients, deskDoctor?.id), [deskDoctor, patients]);
   const suggestions = useMemo(() => {
     const ranked = searchPatients(patients, query, 0);
-    const own = ranked.filter((patient) => !deskDoctor || patient.doctorId === deskDoctor.id);
-    const rest = ranked.filter((patient) => deskDoctor && patient.doctorId !== deskDoctor.id);
+    const own = ranked.filter((patient) => !deskDoctor || isPatientOf(patient, deskDoctor.id));
+    const rest = ranked.filter((patient) => deskDoctor && !isPatientOf(patient, deskDoctor.id));
     return [...own, ...rest].slice(0, 6);
   }, [deskDoctor, patients, query]);
   const department = deskDoctor?.department || 'general';
