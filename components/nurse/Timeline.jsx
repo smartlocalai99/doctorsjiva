@@ -1,7 +1,7 @@
 import { CalendarDays, Check, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { addDays, addMonths, daysBetween, formatDate, itemState, WHO_LABEL } from '@/lib/nurse-schedule';
+import { addDays, addMonths, daysBetween, formatDate, itemState, parentRecordText, WHO_LABEL } from '@/lib/nurse-schedule';
 
 const SHORT = { day: 'numeric', month: 'short' };
 const LONG = { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' };
@@ -57,7 +57,7 @@ function DateControl({ hint, label, max, min, onChange, readOnly = false, staged
   );
 }
 
-function ItemRow({ item, label, note, onToggle, recorded, staged, state, who }) {
+function ItemRow({ item, label, note, onToggle, parent, recorded, staged, state, who }) {
   const status = item.status;
   return (
     <li className={`nurse-tl-item nurse-check-${state}`}>
@@ -68,6 +68,7 @@ function ItemRow({ item, label, note, onToggle, recorded, staged, state, who }) 
         </strong>
         {note ? <span className="nurse-tl-note">{note}</span> : null}
         {staged ? <em className="nurse-check-staged">Not saved yet</em> : recorded ? <em className="nurse-check-recorded">{recorded}</em> : null}
+        {parent && !staged && !item.status ? <em className="nurse-check-parent">{parent}</em> : null}
       </div>
       <div className="nurse-tl-item-actions" role="group" aria-label={`Status of ${label}`}>
         <button aria-pressed={status === 'done'} className="nurse-choice nurse-choice-done" type="button" onClick={() => onToggle(status === 'done' ? null : 'done')}>
@@ -129,6 +130,7 @@ function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggl
                   key={original.id}
                   label={original.conditional ? `${original.labelEn} (if doctor says)` : original.labelEn}
                   onToggle={(next) => onToggleItem(card.plan.id, original, next)}
+                  parent={parentRecordText(original.parentRecord)}
                   recorded={recordedText(original.status, original.doneOn, original.nurseName)}
                   staged={Boolean(staged)}
                   state={itemState({ ...original, status }, today)}

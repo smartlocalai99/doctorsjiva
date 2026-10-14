@@ -20,7 +20,7 @@ import {
 import { CycleSummary, DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
-import { buildTimeline, formatDate } from '@/lib/nurse-schedule';
+import { buildTimeline, formatDate, withParentRecords } from '@/lib/nurse-schedule';
 
 export default function NursePatientPage() {
   const { status } = useNurse();
@@ -55,6 +55,7 @@ function mergeView(current, next) {
     ...next,
     cycles: next.cycles ?? current?.cycles ?? [],
     extraItems: next.extraItems ?? current?.extraItems ?? [],
+    vaccineRecords: next.vaccineRecords ?? current?.vaccineRecords ?? [],
     visitDates: next.visitDates ?? current?.visitDates ?? [],
   };
 }
@@ -146,7 +147,8 @@ function PatientScreen() {
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
   const cycles = view.cycles || [];
   const department = doctor.department && doctor.department !== 'general' ? doctor.department : deskDoctor?.department || 'general';
-  const { cards, nextKey } = buildTimeline(view, changes, dates, today);
+  // Vaccines a parent recorded in the app show on their items.
+  const { cards, nextKey } = buildTimeline(withParentRecords(view), changes, dates, today);
   const nextCard = cards.find((card) => card.key === nextKey) || null;
   const nextValue = nextTouched
     ? nextDate

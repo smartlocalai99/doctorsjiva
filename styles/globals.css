@@ -1993,6 +1993,11 @@ textarea:focus-visible {
     @apply text-brand;
   }
 
+  /* A vaccine the parent recorded in the DrJiva app; the nurse confirms. */
+  .nurse-check-parent {
+    @apply block rounded-lg bg-amber-50 px-2 py-1 text-amber-800;
+  }
+
   .nurse-check-actions {
     @apply grid grid-cols-2 gap-2;
   }
