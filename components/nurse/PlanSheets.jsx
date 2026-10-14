@@ -4,6 +4,9 @@ import { NurseSheet } from '@/components/nurse/NurseSheet';
 import { nurseRequest } from '@/contexts/NurseContext';
 import { addDays, childAge, CYCLE_PREVIEW, daysBetween, formatDate, pregnancyText } from '@/lib/nurse-schedule';
 
+// A newborn often has no name yet; the app shows this as "Child" / "బిడ్డ".
+export const UNNAMED_CHILD = 'Child';
+
 function SheetError({ message }) {
   return message ? <p className="error-banner" role="alert">{message}</p> : null;
 }
@@ -227,7 +230,7 @@ export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
             action: 'add_child',
             birthDate,
             careDoctorId: doctor.careDoctorId,
-            childName,
+            childName: childName.trim() || UNNAMED_CHILD,
             doctorName: doctor.careDoctorId ? null : doctor.name,
             gender,
             patientId: patient.id,
@@ -235,8 +238,8 @@ export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
         }}
       >
         <label className="nurse-field">
-          <span>Child&apos;s name</span>
-          <div className="nurse-input-wrap"><input maxLength={80} required value={childName} onChange={(event) => setChildName(event.target.value)} /></div>
+          <span>Child&apos;s name <em>optional – leave empty if not named yet</em></span>
+          <div className="nurse-input-wrap"><input maxLength={80} placeholder={UNNAMED_CHILD} value={childName} onChange={(event) => setChildName(event.target.value)} /></div>
         </label>
         <label className="nurse-field">
           <span>Birth date</span>
@@ -254,7 +257,7 @@ export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
           </div>
         </div>
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !childName.trim() || !birthDate} type="submit">
+        <button className="primary-button nurse-big-button" disabled={busy || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child schedule'}
         </button>
       </form>
@@ -575,7 +578,7 @@ export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
       const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: parentName }, method: 'POST' });
       const patient = view.patient;
       await nurseRequest('/api/nurse/plan', {
-        body: { action: 'add_child', birthDate, careDoctorId: deskDoctor?.id || null, childName, gender, patientId: patient.id },
+        body: { action: 'add_child', birthDate, careDoctorId: deskDoctor?.id || null, childName: childName.trim() || UNNAMED_CHILD, gender, patientId: patient.id },
         method: 'POST',
       });
       onStarted(patient);
@@ -601,8 +604,8 @@ export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
           <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} required value={parentName} onChange={(event) => setParentName(event.target.value)} /></div>
         </label>
         <label className="nurse-field">
-          <span>Child&apos;s name</span>
-          <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} required value={childName} onChange={(event) => setChildName(event.target.value)} /></div>
+          <span>Child&apos;s name <em>optional – leave empty if not named yet</em></span>
+          <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} placeholder={UNNAMED_CHILD} value={childName} onChange={(event) => setChildName(event.target.value)} /></div>
         </label>
         <label className="nurse-field">
           <span>Birth date</span>
@@ -620,7 +623,7 @@ export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
           </div>
         </div>
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !childName.trim() || !birthDate} type="submit">
+        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child'}
         </button>
       </form>

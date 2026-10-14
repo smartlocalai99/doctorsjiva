@@ -147,8 +147,19 @@ function PatientScreen() {
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
   const cycles = view.cycles || [];
   const department = doctor.department && doctor.department !== 'general' ? doctor.department : deskDoctor?.department || 'general';
+  // The desk doctor's own plans: Dr. Sudarshan (children) sees the child
+  // plans, Dr. Mounika the pregnancy and cycles. Everything if that would
+  // leave nothing.
+  const deskDept = deskDoctor?.department;
+  const ownPlans = view.plans.filter((plan) =>
+    deskDept === 'pediatrics' ? plan.type === 'child' : deskDept === 'gynecology' ? plan.type !== 'child' : true,
+  );
+  const ownCycles = deskDept === 'pediatrics' ? [] : cycles;
+  const showAll = !ownPlans.length && !ownCycles.length;
+  const shownPlans = showAll ? view.plans : ownPlans;
+  const shownCycles = showAll ? cycles : ownCycles;
   // Vaccines a parent recorded in the app show on their items.
-  const { cards, nextKey } = buildTimeline(withParentRecords(view), changes, dates, today);
+  const { cards, nextKey } = buildTimeline(withParentRecords({ ...view, cycles: shownCycles, plans: shownPlans }), changes, dates, today);
   const nextCard = cards.find((card) => card.key === nextKey) || null;
   const nextValue = nextTouched
     ? nextDate
@@ -354,11 +365,11 @@ function PatientScreen() {
         </div>
       ) : null}
 
-      {cycles.map((cycle) => (
+      {shownCycles.map((cycle) => (
         <CycleSummary cycle={cycle} key={cycle.id} onAction={(type, target) => setSheet({ cycle: target, type })} today={today} />
       ))}
 
-      {view.plans.map((plan) => (
+      {shownPlans.map((plan) => (
         <PlanSummary everyVisit={view.everyVisit} key={plan.id} onAction={(type, target) => setSheet({ plan: target, type })} patientName={patient.name} plan={plan} today={today} />
       ))}
 
@@ -372,7 +383,7 @@ function PatientScreen() {
             cards={cards}
             changes={changes}
             dates={dates}
-            multiPlan={view.plans.length > 1}
+            multiPlan={shownPlans.length > 1}
             nextDate={nextValue}
             nextKey={nextKey}
             onCycleDate={setCycleCardDate}
