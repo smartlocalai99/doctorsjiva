@@ -1,4 +1,4 @@
-import { Baby, CheckCircle2, ClipboardPlus, HeartPulse, Search } from 'lucide-react';
+import { Baby, CheckCircle2, ClipboardPlus, HeartPulse, Search, Sprout } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -9,12 +9,15 @@ import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import {
   AddChildSheet,
+  ChangeDayOneSheet,
+  CloseCycleSheet,
   ClosePlanSheet,
   CorrectDueDateSheet,
   HospitalIdSheet,
+  StartCycleSheet,
   StartPregnancySheet,
 } from '@/components/nurse/PlanSheets';
-import { DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
+import { CycleSummary, DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { buildTimeline, formatDate } from '@/lib/nurse-schedule';
@@ -26,21 +29,22 @@ export default function NursePatientPage() {
   return <PatientScreen />;
 }
 
-function initialDoctor(view, hospitalDoctors) {
+function initialDoctor(view, hospitalDoctors, deskDoctor) {
   const current = view.doctor;
-  if (!current) return { careDoctorId: null, department: 'general', key: '', name: '' };
+  // No doctor known yet: the doctor the nurse is working with today.
+  if (!current) {
+    return deskDoctor
+      ? { careDoctorId: deskDoctor.id, department: deskDoctor.department, key: deskDoctor.id, name: deskDoctor.name }
+      : { careDoctorId: null, department: 'general', key: '', name: '' };
+  }
   if (current.careDoctorId && hospitalDoctors.some((doctor) => doctor.id === current.careDoctorId)) {
     return { careDoctorId: current.careDoctorId, department: current.department, key: current.careDoctorId, name: current.name };
   }
   return { careDoctorId: null, department: current.department || 'general', key: 'other', name: current.name };
 }
 
-// Next visit date to start with: the date already planned for the next
-// visit, else the next visit the patient already has.
-function initialNextDate(view) {
-  const { cards, nextKey } = buildTimeline(view, {}, {}, view.today);
-  const planned = cards.find((card) => card.key === nextKey)?.date;
-  if (planned && planned >= view.today) return planned;
+// The next visit the patient already has (if still ahead).
+function savedNextDate(view) {
   const last = view.lastFollowup?.nextDate;
   return last && last >= view.today ? last : '';
 }
@@ -49,6 +53,7 @@ function initialNextDate(view) {
 function mergeView(current, next) {
   return {
     ...next,
+    cycles: next.cycles ?? current?.cycles ?? [],
     extraItems: next.extraItems ?? current?.extraItems ?? [],
     visitDates: next.visitDates ?? current?.visitDates ?? [],
   };
@@ -64,7 +69,7 @@ function toggle(map, key, savedStatus, next) {
 
 function PatientScreen() {
   const router = useRouter();
-  const { profile } = useNurse();
+  const { deskDoctor, profile } = useNurse();
   const hospitalDoctors = useMemo(() => profile?.doctors || [], [profile]);
   const patientId = typeof router.query.id === 'string' ? router.query.id : null;
 
@@ -73,7 +78,9 @@ function PatientScreen() {
   const [doctor, setDoctor] = useState({ careDoctorId: null, department: 'general', key: '', name: '' });
   const [changes, setChanges] = useState({});
   const [dates, setDates] = useState({});
+  // The next visit date follows the Next card until the nurse sets one.
   const [nextDate, setNextDate] = useState('');
+  const [nextTouched, setNextTouched] = useState(false);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -84,9 +91,10 @@ function PatientScreen() {
 
   const applyFreshView = useCallback((loaded) => {
     setView(loaded);
-    setDoctor(initialDoctor(loaded, hospitalDoctors));
-    setNextDate(initialNextDate(loaded));
-  }, [hospitalDoctors]);
+    setDoctor(initialDoctor(loaded, hospitalDoctors, deskDoctor));
+    setNextDate('');
+    setNextTouched(false);
+  }, [deskDoctor, hospitalDoctors]);
 
   useEffect(() => {
     if (!patientId) return;
@@ -104,6 +112,13 @@ function PatientScreen() {
   }, [applyFreshView, patientId]);
 
   const dirty = Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || note.trim().length > 0;
+  useEffect(() => {
+    // Tells the frame not to auto-reload for a newer deploy.
+    window.__drjivaNurseDirty = dirty;
+    return () => {
+      window.__drjivaNurseDirty = false;
+    };
+  }, [dirty]);
   useEffect(() => {
     if (!dirty) return undefined;
     const warn = (event) => {
@@ -129,18 +144,38 @@ function PatientScreen() {
   const today = view.today;
   const patient = view.patient;
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
+  const cycles = view.cycles || [];
+  const department = doctor.department && doctor.department !== 'general' ? doctor.department : deskDoctor?.department || 'general';
   const { cards, nextKey } = buildTimeline(view, changes, dates, today);
   const nextCard = cards.find((card) => card.key === nextKey) || null;
+  const nextValue = nextTouched
+    ? nextDate
+    : nextCard?.date && nextCard.date >= today ? nextCard.date : savedNextDate(view);
   const changeCount = Object.keys(changes).length + Object.keys(dates).length;
   // Arrived from "New pregnancy" on the search screen.
-  const notice = savedNotice || (router.query.started === 'pregnancy' && hasPregnancy
-    ? 'Pregnancy started. Her DrJiva app now shows the baby’s week.'
-    : '');
+  const STARTED = {
+    child: 'Child added. The parent’s DrJiva app now shows the vaccine dates.',
+    cycle: 'OI-TI / IUI cycle started. Her DrJiva app now shows each step and its date.',
+    pregnancy: 'Pregnancy started. Her DrJiva app now shows the baby’s week.',
+  };
+  const notice = savedNotice || STARTED[router.query.started] || '';
 
   const touch = () => setSavedNotice('');
   const toggleItem = (planId, item, next) => {
     touch();
     setChanges((current) => toggle(current, `${planId}:${item.id}`, item.status, next));
+  };
+  const toggleCycle = (cycleId, step, next) => {
+    touch();
+    setChanges((current) => toggle(current, `cyc:${cycleId}:${step.id}`, step.status, next));
+  };
+  const setCycleCardDate = (card, date) => {
+    touch();
+    setDates((current) => {
+      const updated = { ...current };
+      for (const step of card.steps) updated[`cycdate:${card.cycle.id}:${step.id}`] = date;
+      return updated;
+    });
   };
   const toggleExtra = (item, next) => {
     touch();
@@ -153,6 +188,7 @@ function PatientScreen() {
   const changeNextDate = (date) => {
     touch();
     setNextDate(date || '');
+    setNextTouched(true);
   };
 
   const removeExtra = async (item) => {
@@ -181,7 +217,7 @@ function PatientScreen() {
     try {
       const entries = Object.entries(changes);
       const items = entries
-        .filter(([key]) => !key.startsWith('extra:'))
+        .filter(([key]) => !key.startsWith('extra:') && !key.startsWith('cyc:'))
         .map(([key, status]) => {
           const [planId, itemId] = key.split(':');
           return { itemId, planId, status };
@@ -196,20 +232,42 @@ function PatientScreen() {
           return { date, planId, visitId };
         });
       // The next visit's card keeps the date the patient was given.
-      if (nextCard?.kind === 'visit' && nextDate && nextDate !== nextCard.date) {
-        visitDates.push({ date: nextDate, planId: nextCard.plan.id, visitId: nextCard.visit.id });
+      if (nextCard?.kind === 'visit' && nextValue && nextValue !== nextCard.date) {
+        visitDates.push({ date: nextValue, planId: nextCard.plan.id, visitId: nextCard.visit.id });
       }
       const extraDates = Object.entries(dates)
         .filter(([key, date]) => key.startsWith('extra:') && date)
         .map(([key, date]) => ({ date, id: key.slice('extra:'.length) }));
+      // OI-TI / IUI: ticks and dates per step, merged.
+      const stepMap = new Map();
+      const stepEntry = (cycleId, stepId) => {
+        const key = `${cycleId}:${stepId}`;
+        if (!stepMap.has(key)) stepMap.set(key, { cycleId, stepId });
+        return stepMap.get(key);
+      };
+      for (const [key, status] of entries) {
+        if (!key.startsWith('cyc:')) continue;
+        const [, cycleId, stepId] = key.split(':');
+        stepEntry(cycleId, stepId).status = status;
+      }
+      for (const [key, date] of Object.entries(dates)) {
+        if (!key.startsWith('cycdate:')) continue;
+        const [, cycleId, stepId] = key.split(':');
+        stepEntry(cycleId, stepId).date = date;
+      }
+      if (nextCard?.kind === 'cycle' && nextValue && nextValue !== nextCard.date) {
+        for (const step of nextCard.steps) stepEntry(nextCard.cycle.id, step.id).date = nextValue;
+      }
+      const cycleSteps = [...stepMap.values()];
       const saved = await nurseRequest('/api/nurse/visit', {
         body: {
           careDoctorId: doctor.careDoctorId,
           doctorName: doctor.careDoctorId ? null : doctor.name,
+          cycleSteps,
           extraDates,
           extraItems,
           items,
-          nextDate: nextDate || null,
+          nextDate: nextValue || null,
           note,
           patientId: patient.id,
           planId: nextCard?.plan?.id || (view.plans.length === 1 ? view.plans[0].id : null),
@@ -221,9 +279,11 @@ function PatientScreen() {
       setChanges({});
       setDates({});
       setNote('');
+      setNextDate('');
+      setNextTouched(false);
       setSavedNotice(
-        nextDate
-          ? `Saved. ${patient.name || 'The patient'}'s app now shows the next visit on ${formatDate(nextDate)}.`
+        nextValue
+          ? `Saved. ${patient.name || 'The patient'}'s app now shows the next visit on ${formatDate(nextValue)}.`
           : `Saved. ${patient.name || 'The patient'}'s app is updated.`,
       );
       window.scrollTo({ behavior: 'smooth', top: 0 });
@@ -262,20 +322,39 @@ function PatientScreen() {
         </p>
       ) : null}
 
-      {!hasPregnancy || doctor.department === 'pediatrics' ? (
+      {/* What this doctor's desk can start for her. */}
+      {department === 'gynecology' && (!hasPregnancy || !cycles.length) ? (
         <div className="nurse-start-row">
           {!hasPregnancy ? (
             <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
               <HeartPulse aria-hidden="true" size={20} /> Pregnancy confirmed
             </button>
           ) : null}
-          {doctor.department === 'pediatrics' ? (
-            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'child' })}>
-              <Baby aria-hidden="true" size={20} /> Add child
+          {!cycles.length && !hasPregnancy ? (
+            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'cycle' })}>
+              <Sprout aria-hidden="true" size={20} /> Start OI-TI / IUI cycle
             </button>
           ) : null}
         </div>
       ) : null}
+      {department === 'pediatrics' ? (
+        <div className="nurse-start-row">
+          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'child' })}>
+            <Baby aria-hidden="true" size={20} /> Add child
+          </button>
+        </div>
+      ) : null}
+      {department === 'general' && !hasPregnancy ? (
+        <div className="nurse-start-row">
+          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
+            <HeartPulse aria-hidden="true" size={20} /> Pregnancy confirmed
+          </button>
+        </div>
+      ) : null}
+
+      {cycles.map((cycle) => (
+        <CycleSummary cycle={cycle} key={cycle.id} onAction={(type, target) => setSheet({ cycle: target, type })} today={today} />
+      ))}
 
       {view.plans.map((plan) => (
         <PlanSummary everyVisit={view.everyVisit} key={plan.id} onAction={(type, target) => setSheet({ plan: target, type })} patientName={patient.name} plan={plan} today={today} />
@@ -292,11 +371,13 @@ function PatientScreen() {
             changes={changes}
             dates={dates}
             multiPlan={view.plans.length > 1}
-            nextDate={nextDate}
+            nextDate={nextValue}
             nextKey={nextKey}
+            onCycleDate={setCycleCardDate}
             onDate={setCardDate}
             onNextDate={changeNextDate}
             onRemoveExtra={(item) => void removeExtra(item)}
+            onToggleCycle={toggleCycle}
             onToggleExtra={toggleExtra}
             onToggleItem={toggleItem}
             removingId={removingId}
@@ -305,7 +386,7 @@ function PatientScreen() {
         </section>
       ) : null}
 
-      {!nextCard ? <NextVisitCard nextDate={nextDate} onNextDate={changeNextDate} today={today} /> : null}
+      {!nextCard ? <NextVisitCard nextDate={nextValue} onNextDate={changeNextDate} today={today} /> : null}
 
       <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'extra' })}>
         <ClipboardPlus aria-hidden="true" size={20} /> Add test or scan from the case sheet
@@ -341,6 +422,15 @@ function PatientScreen() {
       {sheet?.type === 'pregnancy' ? (
         <StartPregnancySheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
+      {sheet?.type === 'cycle' ? (
+        <StartCycleSheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
+      ) : null}
+      {sheet?.type === 'cycleDayOne' ? (
+        <ChangeDayOneSheet cycle={sheet.cycle} onClose={() => setSheet(null)} onDone={onPlanChanged} today={today} />
+      ) : null}
+      {sheet?.type === 'cycleClose' ? (
+        <CloseCycleSheet cycle={sheet.cycle} onClose={() => setSheet(null)} onDone={onPlanChanged} today={today} />
+      ) : null}
       {sheet?.type === 'child' ? (
         <AddChildSheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
@@ -352,7 +442,7 @@ function PatientScreen() {
       ) : null}
       {sheet?.type === 'extra' ? (
         <AddExtraSheet
-          nextDate={nextDate}
+          nextDate={nextValue}
           onClose={() => setSheet(null)}
           onDone={(nextView) => {
             setSheet(null);

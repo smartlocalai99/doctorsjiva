@@ -1,7 +1,7 @@
 import { CalendarDays, Check, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { addDays, addMonths, daysBetween, formatDate, itemState } from '@/lib/nurse-schedule';
+import { addDays, addMonths, daysBetween, formatDate, itemState, WHO_LABEL } from '@/lib/nurse-schedule';
 
 const SHORT = { day: 'numeric', month: 'short' };
 const LONG = { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' };
@@ -57,12 +57,16 @@ function DateControl({ hint, label, max, min, onChange, readOnly = false, staged
   );
 }
 
-function ItemRow({ item, label, onToggle, recorded, staged, state }) {
+function ItemRow({ item, label, note, onToggle, recorded, staged, state, who }) {
   const status = item.status;
   return (
     <li className={`nurse-tl-item nurse-check-${state}`}>
       <div className="nurse-tl-item-copy">
-        <strong>{label}</strong>
+        <strong>
+          {label}
+          {who ? <span className={`nurse-who nurse-who-${who}`}>{WHO_LABEL[who]}</span> : null}
+        </strong>
+        {note ? <span className="nurse-tl-note">{note}</span> : null}
         {staged ? <em className="nurse-check-staged">Not saved yet</em> : recorded ? <em className="nurse-check-recorded">{recorded}</em> : null}
       </div>
       <div className="nurse-tl-item-actions" role="group" aria-label={`Status of ${label}`}>
@@ -82,9 +86,12 @@ function recordedText(status, doneOn, by) {
   return `${status === 'done' ? `Done ${formatDate(doneOn, SHORT)}` : 'Not needed'}${by ? ` · ${by}` : ''}`;
 }
 
-function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggleExtra, onToggleItem, removing, today }) {
+function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggleCycle, onToggleExtra, onToggleItem, removing, today }) {
   const state = isNext ? 'next' : card.state;
-  const tag = card.kind === 'extra' ? 'From case sheet' : multiPlan || card.plan.type === 'child' ? card.plan.personName : 'Pregnancy';
+  const tag =
+    card.kind === 'extra' ? 'From case sheet'
+      : card.kind === 'cycle' ? 'OI-TI / IUI'
+        : multiPlan || card.plan.type === 'child' ? card.plan.personName : 'Pregnancy';
 
   return (
     <article className={`nurse-tl-card nurse-tl-${state}`} aria-label={`${card.title}, ${STATE_PILL[state] || ''}`}>
@@ -93,10 +100,26 @@ function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggl
         <span className="nurse-tl-tag">{tag}</span>
       </header>
       <h3 className="nurse-tl-title">{card.title}</h3>
-      {card.kind === 'visit' ? <p className="nurse-tl-sub">{windowText(card)}</p> : <p className="nurse-tl-sub">Added by {card.item.addedBy}</p>}
+      {card.kind === 'visit' ? <p className="nurse-tl-sub">{windowText(card)}</p> : null}
+      {card.kind === 'extra' ? <p className="nurse-tl-sub">Added by {card.item.addedBy}</p> : null}
+      {card.kind === 'cycle' ? <p className="nurse-tl-sub">Cycle day {card.day}</p> : null}
 
       <ul className="nurse-tl-items">
-        {card.kind === 'visit'
+        {card.kind === 'cycle'
+          ? card.steps.map((step) => (
+              <ItemRow
+                item={step}
+                key={step.id}
+                label={step.labelEn}
+                note={step.noteEn}
+                onToggle={(next) => onToggleCycle(card.cycle.id, { ...step, status: step.savedStatus }, next)}
+                recorded={recordedText(step.savedStatus, step.doneOn, step.nurseName)}
+                staged={Boolean(changes[`cyc:${card.cycle.id}:${step.id}`])}
+                state={step.status === 'done' ? 'done' : step.status === 'not_needed' ? 'not_needed' : card.state === 'pending' ? 'pending' : 'due_now'}
+                who={step.who}
+              />
+            ))
+          : card.kind === 'visit'
           ? card.visit.items.map((original) => {
               const staged = changes[`${card.plan.id}:${original.id}`];
               const status = staged === 'clear' ? null : staged ?? original.status;
@@ -163,9 +186,11 @@ export function Timeline({
   multiPlan,
   nextDate,
   nextKey,
+  onCycleDate,
   onDate,
   onNextDate,
   onRemoveExtra,
+  onToggleCycle,
   onToggleExtra,
   onToggleItem,
   removingId,
@@ -188,9 +213,16 @@ export function Timeline({
       {cards.map((card) => {
         const isNext = card.key === nextKey;
         const value = isNext ? nextDate : card.date;
-        const staged = isNext ? false : card.key in dates;
-        // A finished visit or test keeps its date.
-        const saved = card.kind === 'extra' ? card.item.status : card.visit.items.every((item) => item.status || item.conditional) && card.visit.items.some((item) => item.status);
+        const staged = isNext
+          ? false
+          : card.kind === 'cycle'
+            ? card.steps.some((step) => `cycdate:${card.cycle.id}:${step.id}` in dates)
+            : card.key in dates;
+        // A finished visit, step or test keeps its date.
+        const saved =
+          card.kind === 'extra' ? card.item.status
+            : card.kind === 'cycle' ? card.steps.every((step) => step.savedStatus)
+              : card.visit.items.every((item) => item.status || item.conditional) && card.visit.items.some((item) => item.status);
         return (
           <div className="nurse-tl-col" data-card={card.key} key={card.key}>
             <TimelineCard
@@ -199,6 +231,7 @@ export function Timeline({
               isNext={isNext}
               multiPlan={multiPlan}
               onRemoveExtra={onRemoveExtra}
+              onToggleCycle={onToggleCycle}
               onToggleExtra={onToggleExtra}
               onToggleItem={onToggleItem}
               removing={removingId === card.item?.id}
@@ -207,9 +240,9 @@ export function Timeline({
             <DateControl
               hint={!value && card.kind === 'visit' ? `Due ${formatDate(card.fromDate, SHORT)} – ${formatDate(card.toDate, SHORT)}` : ''}
               label={`Date for ${card.title}`}
-              max={addDays(today, card.kind === 'extra' ? 400 : 2000)}
+              max={addDays(today, card.kind === 'extra' ? 400 : card.kind === 'cycle' ? 120 : 2000)}
               min={isNext ? today : addDays(today, -60)}
-              onChange={(date) => (isNext ? onNextDate(date) : onDate(card.key, date))}
+              onChange={(date) => (isNext ? onNextDate(date) : card.kind === 'cycle' ? onCycleDate(card, date) : onDate(card.key, date))}
               readOnly={!isNext && Boolean(saved)}
               staged={staged}
               value={value}

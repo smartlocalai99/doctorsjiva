@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { NurseSheet } from '@/components/nurse/NurseSheet';
 import { nurseRequest } from '@/contexts/NurseContext';
-import { addDays, childAge, daysBetween, formatDate, pregnancyText } from '@/lib/nurse-schedule';
+import { addDays, childAge, CYCLE_PREVIEW, daysBetween, formatDate, pregnancyText } from '@/lib/nurse-schedule';
 
 function SheetError({ message }) {
   return message ? <p className="error-banner" role="alert">{message}</p> : null;
@@ -366,6 +366,263 @@ export function HospitalIdSheet({ onClose, onDone, patient }) {
         </label>
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save ID'}</button>
+      </form>
+    </NurseSheet>
+  );
+}
+
+function CyclePreview({ anchor }) {
+  if (!anchor) return null;
+  return (
+    <ul className="nurse-preview nurse-cycle-preview">
+      {CYCLE_PREVIEW.map((step) => (
+        <li key={step.day}>
+          <span>Day {step.day} · {step.label}</span>
+          <strong>{formatDate(addDays(anchor, step.day - 1), { day: 'numeric', month: 'short', weekday: 'short' })}</strong>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CycleFields({ anchor, partnerName, personName, setAnchor, setPartnerName, setPersonName, today }) {
+  return (
+    <>
+      <label className="nurse-field">
+        <span>Wife&apos;s name</span>
+        <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} required value={personName} onChange={(event) => setPersonName(event.target.value)} /></div>
+      </label>
+      <label className="nurse-field">
+        <span>Husband&apos;s name <em>optional</em></span>
+        <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} value={partnerName} onChange={(event) => setPartnerName(event.target.value)} /></div>
+        <small>His semen analysis is part of this cycle.</small>
+      </label>
+      <label className="nurse-field">
+        <span>Day 1 = first day of her period</span>
+        <div className="nurse-input-wrap">
+          <input max={addDays(today, 30)} min={addDays(today, -60)} required type="date" value={anchor} onChange={(event) => setAnchor(event.target.value)} />
+        </div>
+      </label>
+      <CyclePreview anchor={anchor} />
+    </>
+  );
+}
+
+// OI-TI / IUI for a patient already open on the desk.
+export function StartCycleSheet({ doctor, onClose, onDone, patient, today }) {
+  const [personName, setPersonName] = useState(patient.name || '');
+  const [partnerName, setPartnerName] = useState('');
+  const [anchor, setAnchor] = useState('');
+  const { busy, error, run } = useSubmit(onDone);
+
+  return (
+    <NurseSheet title="Start OI-TI / IUI cycle" onClose={onClose}>
+      <form
+        className="nurse-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void run({
+            action: 'start_cycle',
+            anchor,
+            careDoctorId: doctor.careDoctorId,
+            doctorName: doctor.careDoctorId ? null : doctor.name,
+            partnerName,
+            patientId: patient.id,
+            personName,
+          });
+        }}
+      >
+        <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
+        <SheetError message={error} />
+        <button className="primary-button nurse-big-button" disabled={busy || !anchor || personName.trim().length < 2} type="submit">
+          {busy ? 'Starting…' : 'Start cycle'}
+        </button>
+      </form>
+    </NurseSheet>
+  );
+}
+
+// From the home screen: her mobile number, then the cycle, in one go.
+export function NewCycleSheet({ deskDoctor, onClose, onStarted, today }) {
+  const [mobile, setMobile] = useState('');
+  const [personName, setPersonName] = useState('');
+  const [partnerName, setPartnerName] = useState('');
+  const [anchor, setAnchor] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: personName }, method: 'POST' });
+      const patient = view.patient;
+      await nurseRequest('/api/nurse/plan', {
+        body: { action: 'start_cycle', anchor, careDoctorId: deskDoctor?.id || null, partnerName, patientId: patient.id, personName },
+        method: 'POST',
+      });
+      onStarted(patient);
+    } catch (submitError) {
+      setError(submitError.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <NurseSheet title="New OI-TI / IUI cycle" onClose={onClose}>
+      <form className="nurse-form" onSubmit={submit}>
+        <label className="nurse-field">
+          <span>Her mobile number</span>
+          <div className="nurse-input-wrap">
+            <span className="nurse-input-prefix">+91</span>
+            <input autoComplete="off" inputMode="numeric" maxLength={10} placeholder="10-digit mobile" required value={mobile} onChange={(event) => setMobile(event.target.value.replace(/\D/g, '').slice(0, 10))} />
+          </div>
+          <small>The number she opens DrJiva with. She gets a reminder for each step.</small>
+        </label>
+        <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
+        <SheetError message={error} />
+        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || !anchor || personName.trim().length < 2} type="submit">
+          {busy ? 'Starting…' : 'Start cycle'}
+        </button>
+      </form>
+    </NurseSheet>
+  );
+}
+
+export function ChangeDayOneSheet({ cycle, onClose, onDone, today }) {
+  const [anchor, setAnchor] = useState(cycle.anchorDate);
+  const { busy, error, run } = useSubmit(onDone);
+  return (
+    <NurseSheet title="Change Day 1" onClose={onClose}>
+      <form
+        className="nurse-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void run({ action: 'update_cycle', anchor, cycleId: cycle.id });
+        }}
+      >
+        <label className="nurse-field">
+          <span>Day 1 = first day of her period</span>
+          <div className="nurse-input-wrap">
+            <input max={addDays(today, 30)} min={addDays(today, -60)} required type="date" value={anchor} onChange={(event) => setAnchor(event.target.value)} />
+          </div>
+          <small>All step dates move with it, except dates you set by hand.</small>
+        </label>
+        <CyclePreview anchor={anchor} />
+        <SheetError message={error} />
+        <button className="primary-button nurse-big-button" disabled={busy || !anchor} type="submit">{busy ? 'Saving…' : 'Save'}</button>
+      </form>
+    </NurseSheet>
+  );
+}
+
+export function CloseCycleSheet({ cycle, onClose, onDone, today }) {
+  const [outcome, setOutcome] = useState(null);
+  const [date, setDate] = useState(today);
+  const { busy, error, run } = useSubmit(onDone);
+  return (
+    <NurseSheet title="Finish this cycle" onClose={onClose}>
+      <form
+        className="nurse-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void run({ action: 'close_cycle', cycleId: cycle.id, date, outcome });
+        }}
+      >
+        <div className="nurse-field">
+          <span>Result</span>
+          <div className="nurse-option-list" role="radiogroup" aria-label="Result">
+            <button aria-checked={outcome === 'positive'} className="nurse-option" role="radio" type="button" onClick={() => setOutcome('positive')}>
+              <strong>Pregnant</strong><span>Test positive. Then tap “Pregnancy confirmed”.</span>
+            </button>
+            <button aria-checked={outcome === 'negative'} className="nurse-option" role="radio" type="button" onClick={() => setOutcome('negative')}>
+              <strong>Not pregnant</strong><span>A new cycle can be started next period.</span>
+            </button>
+            <button aria-checked={outcome === 'stopped'} className="nurse-option" role="radio" type="button" onClick={() => setOutcome('stopped')}>
+              <strong>Stopped</strong><span>The doctor stopped this cycle.</span>
+            </button>
+          </div>
+        </div>
+        <label className="nurse-field">
+          <span>Date</span>
+          <div className="nurse-input-wrap">
+            <input max={today} min={addDays(today, -365)} required type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+          </div>
+        </label>
+        <SheetError message={error} />
+        <button className="primary-button nurse-big-button" disabled={busy || !outcome || !date} type="submit">{busy ? 'Saving…' : 'Finish cycle'}</button>
+      </form>
+    </NurseSheet>
+  );
+}
+
+// From the home screen for the children's doctor: parent's mobile + child.
+export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
+  const [mobile, setMobile] = useState('');
+  const [parentName, setParentName] = useState('');
+  const [childName, setChildName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: parentName }, method: 'POST' });
+      const patient = view.patient;
+      await nurseRequest('/api/nurse/plan', {
+        body: { action: 'add_child', birthDate, careDoctorId: deskDoctor?.id || null, childName, gender, patientId: patient.id },
+        method: 'POST',
+      });
+      onStarted(patient);
+    } catch (submitError) {
+      setError(submitError.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <NurseSheet title="New child" onClose={onClose}>
+      <form className="nurse-form" onSubmit={submit}>
+        <label className="nurse-field">
+          <span>Parent&apos;s mobile number</span>
+          <div className="nurse-input-wrap">
+            <span className="nurse-input-prefix">+91</span>
+            <input autoComplete="off" inputMode="numeric" maxLength={10} placeholder="10-digit mobile" required value={mobile} onChange={(event) => setMobile(event.target.value.replace(/\D/g, '').slice(0, 10))} />
+          </div>
+          <small>The parent sees the vaccine dates in DrJiva with this number.</small>
+        </label>
+        <label className="nurse-field">
+          <span>Parent&apos;s name</span>
+          <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} required value={parentName} onChange={(event) => setParentName(event.target.value)} /></div>
+        </label>
+        <label className="nurse-field">
+          <span>Child&apos;s name</span>
+          <div className="nurse-input-wrap"><input autoComplete="off" maxLength={80} required value={childName} onChange={(event) => setChildName(event.target.value)} /></div>
+        </label>
+        <label className="nurse-field">
+          <span>Birth date</span>
+          <div className="nurse-input-wrap">
+            <input max={today} min={addDays(today, -6574)} required type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+          </div>
+        </label>
+        {birthDate ? <p className="nurse-preview">{childAge(birthDate, today)}</p> : null}
+        <div className="nurse-field">
+          <span>Gender <em>optional</em></span>
+          <div className="nurse-segment" role="radiogroup" aria-label="Gender">
+            <button aria-checked={gender === 'female'} role="radio" type="button" onClick={() => setGender('female')}>Girl</button>
+            <button aria-checked={gender === 'male'} role="radio" type="button" onClick={() => setGender('male')}>Boy</button>
+            <button aria-checked={gender === null} role="radio" type="button" onClick={() => setGender(null)}>Not set</button>
+          </div>
+        </div>
+        <SheetError message={error} />
+        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !childName.trim() || !birthDate} type="submit">
+          {busy ? 'Adding…' : 'Add child'}
+        </button>
       </form>
     </NurseSheet>
   );

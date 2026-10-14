@@ -2,7 +2,7 @@ import { ChevronDown, Pencil, Stethoscope } from 'lucide-react';
 import { useState } from 'react';
 
 import { NurseSheet } from '@/components/nurse/NurseSheet';
-import { childAge, DEPARTMENT_LABEL, formatDate, formatMobile, pregnancyText, pregnancyWeek } from '@/lib/nurse-schedule';
+import { childAge, cycleDay, DEPARTMENT_LABEL, formatDate, formatMobile, pregnancyText, pregnancyWeek } from '@/lib/nurse-schedule';
 
 // Patient name on the left, the doctor on the top right (tap to change).
 export function PatientHeader({ doctor, onEditDoctor, onEditId, patient }) {
@@ -116,6 +116,31 @@ export function PlanSummary({ everyVisit, onAction, patientName, plan, today }) 
         ) : (
           <button className="secondary-button" type="button" onClick={() => onAction('close', plan)}>Stop vaccines</button>
         )}
+      </footer>
+    </article>
+  );
+}
+
+// OI-TI / IUI: where she is in the cycle, and the two actions.
+export function CycleSummary({ cycle, onAction, today }) {
+  const day = cycleDay(cycle.anchorDate, today);
+  const length = cycle.lengthDays || 31;
+  const next = cycle.steps.find((step) => !step.status && step.date >= today);
+  return (
+    <article className="nurse-plan nurse-plan-cycle">
+      <div className="nurse-plan-head">
+        <h2>{cycle.titleEn} cycle</h2>
+        <p>{day >= 1 ? `Cycle day ${Math.min(day, length + 30)}` : `Starts ${formatDate(cycle.anchorDate)}`} · Day 1 was {formatDate(cycle.anchorDate)}</p>
+        <p>
+          Wife: <strong>{cycle.personName}</strong>
+          {cycle.partnerName ? <> · Husband: <strong>{cycle.partnerName}</strong></> : null}
+        </p>
+        {next ? <p>Next: <strong>{next.labelEn}</strong> on {formatDate(next.date, { day: 'numeric', month: 'short', weekday: 'short' })}</p> : null}
+      </div>
+      <div className="nurse-progress" aria-hidden="true"><i style={{ width: `${Math.min(100, Math.max(0, (day / length) * 100))}%` }} /></div>
+      <footer className="nurse-plan-actions">
+        <button className="secondary-button" type="button" onClick={() => onAction('cycleDayOne', cycle)}>Change Day 1</button>
+        <button className="secondary-button" type="button" onClick={() => onAction('cycleClose', cycle)}>Finish cycle</button>
       </footer>
     </article>
   );

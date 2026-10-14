@@ -2390,4 +2390,91 @@ textarea:focus-visible {
   .nurse-tl-quick button[aria-pressed='true'] {
     @apply border-brand bg-brand-soft text-brand;
   }
+
+  /* Newer deploy waiting (unsaved changes on screen) */
+  .nurse-update-bar {
+    @apply flex items-center justify-between gap-3 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-900;
+  }
+
+  .nurse-update-bar button {
+    @apply inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-amber-500 px-4 text-sm font-extrabold text-white;
+  }
+
+  /* Which doctor today */
+  .nurse-desk-list {
+    @apply grid gap-3;
+  }
+
+  .nurse-desk-card {
+    @apply flex min-h-20 items-center gap-4 rounded-2xl border-2 border-line bg-white px-4 py-4 text-left transition hover:border-brand;
+  }
+
+  .nurse-desk-card[aria-checked='true'] {
+    @apply border-brand bg-brand-soft;
+  }
+
+  .nurse-desk-avatar {
+    @apply grid size-14 shrink-0 place-items-center rounded-2xl bg-brand text-lg font-extrabold text-white;
+  }
+
+  .nurse-desk-copy {
+    @apply grid min-w-0 gap-1;
+  }
+
+  .nurse-desk-copy strong {
+    @apply text-lg font-extrabold leading-snug text-ink;
+  }
+
+  .nurse-desk-copy span {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold text-muted;
+  }
+
+  .nurse-desk-line {
+    @apply flex flex-wrap items-center gap-2 rounded-2xl bg-brand-soft px-3 py-2 text-[15px] font-semibold text-ink;
+  }
+
+  .nurse-desk-line svg {
+    @apply text-brand;
+  }
+
+  .nurse-desk-line .nurse-link-button {
+    @apply ml-auto min-h-9;
+  }
+
+  /* OI-TI / IUI */
+  .nurse-who {
+    @apply ml-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 align-middle text-xs font-extrabold text-muted;
+  }
+
+  .nurse-who-husband {
+    @apply bg-sky-100 text-sky-800;
+  }
+
+  .nurse-who-couple {
+    @apply bg-violet-100 text-violet-800;
+  }
+
+  .nurse-tl-note {
+    @apply text-xs font-bold text-amber-800;
+  }
+
+  .nurse-cycle-preview {
+    @apply grid gap-1.5 text-[15px];
+  }
+
+  .nurse-cycle-preview li {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .nurse-cycle-preview span {
+    @apply font-semibold text-ink;
+  }
+
+  .nurse-plan-cycle {
+    @apply border-violet-200;
+  }
+
+  .nurse-plan-cycle .nurse-progress i {
+    @apply bg-violet-500;
+  }
 }

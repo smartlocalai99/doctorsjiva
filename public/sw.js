@@ -1,4 +1,5 @@
-const CACHE_NAME = 'drjiva-doctors-shell-v1';
+// v2: drops files cached from older deploys (they kept old screens alive).
+const CACHE_NAME = 'drjiva-doctors-shell-v2';
 const APP_SHELL = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

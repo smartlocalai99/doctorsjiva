@@ -6,7 +6,7 @@ import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { useNurse } from '@/contexts/NurseContext';
-import { searchPatients } from '@/lib/nurse-directory';
+import { patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
 
 const PAGE = 40;
 
@@ -20,8 +20,9 @@ export default function NursePatientsPage() {
 // Every patient of the nurse's hospital, newest first. Uses the list the
 // desk already loaded; filtering happens on the phone.
 function AllPatients() {
-  const { directory, ensureDirectory, loadDirectory, profile } = useNurse();
+  const { deskDoctor, directory, ensureDirectory, loadDirectory, profile } = useNurse();
   const [query, setQuery] = useState('');
+  const [scope, setScope] = useState('mine');
   const [shown, setShown] = useState(PAGE);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -29,7 +30,11 @@ function AllPatients() {
     ensureDirectory();
   }, [ensureDirectory]);
 
-  const patients = directory.patients;
+  const everyone = directory.patients;
+  const patients = useMemo(
+    () => (deskDoctor && scope === 'mine' ? patientsOfDoctor(everyone, deskDoctor.id) : everyone),
+    [deskDoctor, everyone, scope],
+  );
   const filtered = useMemo(
     () => (query.trim().length >= 2 ? searchPatients(patients, query, 0) : patients),
     [patients, query],
@@ -57,6 +62,17 @@ function AllPatients() {
             <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : undefined} size={20} />
           </button>
         </div>
+
+        {deskDoctor ? (
+          <div className="nurse-segment" role="tablist" aria-label="Whose patients">
+            <button aria-selected={scope === 'mine'} role="tab" type="button" onClick={() => { setScope('mine'); setShown(PAGE); }}>
+              {deskDoctor.name}
+            </button>
+            <button aria-selected={scope === 'all'} role="tab" type="button" onClick={() => { setScope('all'); setShown(PAGE); }}>
+              All patients
+            </button>
+          </div>
+        ) : null}
 
         <div className="nurse-field">
           <label className="sr-only" htmlFor="nurse-filter">Filter by name, mobile or hospital ID</label>

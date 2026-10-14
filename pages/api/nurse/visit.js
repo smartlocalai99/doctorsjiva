@@ -21,11 +21,19 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
     .map((entry) => ({ planId: uuidOrNull(entry?.planId), visitId: uuidOrNull(entry?.visitId), date: dateOrNull(entry?.date) }));
   const extraDates = (Array.isArray(body.extraDates) ? body.extraDates.slice(0, 40) : [])
     .map((entry) => ({ id: uuidOrNull(entry?.id), date: dateOrNull(entry?.date) }));
+  // OI-TI / IUI steps: a tick and/or a date ("date": null = back to plan).
+  const cycleSteps = (Array.isArray(body.cycleSteps) ? body.cycleSteps.slice(0, 60) : []).map((entry) => {
+    const step = { cycleId: uuidOrNull(entry?.cycleId), stepId: uuidOrNull(entry?.stepId) };
+    if (STATUSES.has(entry?.status)) step.status = entry.status;
+    if (entry && 'date' in entry) step.date = dateOrNull(entry.date);
+    return step;
+  });
   if (
     cleanItems.length !== items.length ||
     cleanExtras.length !== extras.length ||
     visitDates.some((entry) => !entry.planId || !entry.visitId) ||
-    extraDates.some((entry) => !entry.id || !entry.date)
+    extraDates.some((entry) => !entry.id || !entry.date) ||
+    cycleSteps.some((entry) => !entry.cycleId || !entry.stepId)
   ) {
     return response.status(400).json({ error: 'The checklist could not be read. Refresh the page and try again.' });
   }
@@ -35,6 +43,9 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
   }
   if (cleanExtras.length) {
     await callCare('care_nurse_set_extra_items', { p_nurse_id: nurse.id, p_patient_id: patientId, p_items: cleanExtras });
+  }
+  if (cycleSteps.length) {
+    await callCare('care_nurse_set_cycle_steps', { p_nurse_id: nurse.id, p_patient_id: patientId, p_items: cycleSteps });
   }
 
   const view = await callCare('care_nurse_save_visit', {
@@ -49,7 +60,7 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
   });
 
   // Extra tests and dates change only when touched; then send them too.
-  if (cleanExtras.length || visitDates.length || extraDates.length) {
+  if (cleanExtras.length || visitDates.length || extraDates.length || cycleSteps.length) {
     return response.status(200).json(await callCare('care_nurse_patient_v2', { p_nurse_id: nurse.id, p_patient_id: patientId }));
   }
   return response.status(200).json(view);

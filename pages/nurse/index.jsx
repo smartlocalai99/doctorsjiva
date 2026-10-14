@@ -1,25 +1,29 @@
-import { HeartPulse, Search, UserPlus, X } from 'lucide-react';
+import { Baby, HeartPulse, Search, Sprout, Stethoscope, UserPlus, X } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 
+import { DeskDoctorPicker } from '@/components/nurse/DeskDoctorPicker';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
-import { NewPregnancySheet } from '@/components/nurse/PlanSheets';
+import { NewChildSheet, NewCycleSheet, NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
-import { searchPatients } from '@/lib/nurse-directory';
+import { patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
 import { formatMobile } from '@/lib/nurse-schedule';
 
 const RECENT_COUNT = 4;
 
 export default function NurseHomePage() {
-  const { status } = useNurse();
+  const { deskDoctor, profile, status } = useNurse();
+  const [picking, setPicking] = useState(false);
   if (status === 'loading') return <NurseLoading />;
   if (status === 'signed_out') return <NurseLogin />;
   if (status === 'error') return <NurseOffline />;
-  return <PatientSearch />;
+  // Right after login (or "Change"): which doctor is she with today?
+  if ((profile?.doctors || []).length > 1 && (!deskDoctor || picking)) return <DeskDoctorPicker onPicked={() => setPicking(false)} />;
+  return <PatientSearch onChangeDoctor={() => setPicking(true)} />;
 }
 
 function NurseOffline() {
@@ -44,9 +48,9 @@ function mobileDigits(query) {
   return '';
 }
 
-function PatientSearch() {
+function PatientSearch({ onChangeDoctor }) {
   const router = useRouter();
-  const { directory, ensureDirectory, loadDirectory, profile, rememberPatient } = useNurse();
+  const { deskDoctor, directory, ensureDirectory, loadDirectory, profile, rememberPatient } = useNurse();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
@@ -57,7 +61,7 @@ function PatientSearch() {
   const [addMobile, setAddMobile] = useState('');
   const [addHospitalId, setAddHospitalId] = useState('');
   const [adding, setAdding] = useState(false);
-  const [pregnancyOpen, setPregnancyOpen] = useState(false);
+  const [startSheet, setStartSheet] = useState(null);
 
   useEffect(() => {
     ensureDirectory();
@@ -65,7 +69,15 @@ function PatientSearch() {
 
   const hospitalName = profile?.hospital?.name;
   const patients = directory.patients;
-  const suggestions = useMemo(() => searchPatients(patients, query, 6), [patients, query]);
+  // The desk doctor's patients first in suggestions; lists show only hers.
+  const mine = useMemo(() => patientsOfDoctor(patients, deskDoctor?.id), [deskDoctor, patients]);
+  const suggestions = useMemo(() => {
+    const ranked = searchPatients(patients, query, 0);
+    const own = ranked.filter((patient) => !deskDoctor || patient.doctorId === deskDoctor.id);
+    const rest = ranked.filter((patient) => deskDoctor && patient.doctorId !== deskDoctor.id);
+    return [...own, ...rest].slice(0, 6);
+  }, [deskDoctor, patients, query]);
+  const department = deskDoctor?.department || 'general';
   const typing = query.trim().length >= 2;
   const listLoading = directory.status === 'idle' && !patients.length;
 
@@ -145,6 +157,15 @@ function PatientSearch() {
     <NurseFrame>
       <Head><title>Find patient · DRJIVA Nurse</title></Head>
       <section className="nurse-section" aria-labelledby="find-heading">
+        {deskDoctor ? (
+          <div className="nurse-desk-line">
+            <Stethoscope aria-hidden="true" size={18} />
+            <span>Working with <strong>{deskDoctor.name}</strong></span>
+            {(profile?.doctors || []).length > 1 ? (
+              <button className="nurse-link-button" type="button" onClick={onChangeDoctor}>Change</button>
+            ) : null}
+          </div>
+        ) : null}
         <h1 className="nurse-title" id="find-heading">Find a patient</h1>
         <p className="nurse-lead">Type a name, mobile number or hospital ID.</p>
 
@@ -252,18 +273,36 @@ function PatientSearch() {
         </section>
       ) : null}
 
-      <section className="nurse-section" aria-label="New pregnancy">
-        <button className="nurse-action-button" type="button" onClick={() => setPregnancyOpen(true)}>
-          <HeartPulse aria-hidden="true" size={22} /> New pregnancy
-        </button>
-        <p className="nurse-muted">Doctor confirmed a pregnancy? Start it here with her mobile number.</p>
+      <section className="nurse-section" aria-label="Start for a new patient">
+        {department === 'gynecology' || department === 'general' ? (
+          <div className="nurse-start-row">
+            <button className="nurse-action-button" type="button" onClick={() => setStartSheet('pregnancy')}>
+              <HeartPulse aria-hidden="true" size={22} /> New pregnancy
+            </button>
+            {department === 'gynecology' ? (
+              <button className="nurse-action-button" type="button" onClick={() => setStartSheet('cycle')}>
+                <Sprout aria-hidden="true" size={22} /> New OI-TI / IUI cycle
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {department === 'pediatrics' ? (
+          <button className="nurse-action-button" type="button" onClick={() => setStartSheet('child')}>
+            <Baby aria-hidden="true" size={22} /> New child (vaccines)
+          </button>
+        ) : null}
+        <p className="nurse-muted">
+          {department === 'pediatrics'
+            ? 'A new baby? Add the child with the parent’s mobile number.'
+            : 'Doctor confirmed a pregnancy or started treatment? Start it here with her mobile number.'}
+        </p>
       </section>
 
       <section className="nurse-section" aria-labelledby="recent-heading">
         <div className="nurse-list-head">
-          <h2 className="nurse-card-title" id="recent-heading">Recent patients</h2>
-          {patients.length > RECENT_COUNT ? (
-            <Link className="nurse-link-button" href="/nurse/patients">View all ({patients.length.toLocaleString('en-IN')})</Link>
+          <h2 className="nurse-card-title" id="recent-heading">{deskDoctor ? `${deskDoctor.name}’s patients` : 'Recent patients'}</h2>
+          {mine.length > RECENT_COUNT || mine.length !== patients.length ? (
+            <Link className="nurse-link-button" href="/nurse/patients">View all ({mine.length.toLocaleString('en-IN')})</Link>
           ) : null}
         </div>
         {listLoading ? (
@@ -277,22 +316,46 @@ function PatientSearch() {
             <p className="nurse-muted">The patient list could not load. Search still works.</p>
             <button className="nurse-link-button" type="button" onClick={() => void loadDirectory({ fresh: true })}>Try again</button>
           </div>
-        ) : patients.length ? (
+        ) : mine.length ? (
           <div className="nurse-patient-list">
-            {patients.slice(0, RECENT_COUNT).map((patient) => <PatientRow key={patient.id} patient={patient} />)}
+            {mine.slice(0, RECENT_COUNT).map((patient) => <PatientRow key={patient.id} patient={patient} />)}
           </div>
         ) : (
-          <p className="nurse-muted">No patients yet. Search a mobile number to add one.</p>
+          <p className="nurse-muted">
+            {deskDoctor ? `No patients of ${deskDoctor.name} yet. Search a mobile number to find or add one.` : 'No patients yet. Search a mobile number to add one.'}
+          </p>
         )}
       </section>
 
-      {pregnancyOpen ? (
+      {startSheet === 'pregnancy' ? (
         <NewPregnancySheet
           doctors={profile?.doctors || []}
-          onClose={() => setPregnancyOpen(false)}
+          onClose={() => setStartSheet(null)}
           onStarted={(patient) => {
-            rememberPatient({ ...patient, lastSeen: profile?.today });
+            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
             void router.push(`/nurse/patient/${patient.id}?started=pregnancy`);
+          }}
+          today={profile?.today}
+        />
+      ) : null}
+      {startSheet === 'cycle' ? (
+        <NewCycleSheet
+          deskDoctor={deskDoctor}
+          onClose={() => setStartSheet(null)}
+          onStarted={(patient) => {
+            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
+            void router.push(`/nurse/patient/${patient.id}?started=cycle`);
+          }}
+          today={profile?.today}
+        />
+      ) : null}
+      {startSheet === 'child' ? (
+        <NewChildSheet
+          deskDoctor={deskDoctor}
+          onClose={() => setStartSheet(null)}
+          onStarted={(patient) => {
+            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
+            void router.push(`/nurse/patient/${patient.id}?started=child`);
           }}
           today={profile?.today}
         />

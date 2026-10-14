@@ -28,6 +28,18 @@ export async function nurseRequest(path, { method = 'GET', body } = {}) {
 
 const NO_DIRECTORY = { loadedAt: 0, patients: [], status: 'idle' };
 
+// The doctor the nurse works with today (asked after every login, kept
+// while the page is reloaded).
+const deskKey = (nurseId) => `drjiva.nurse.deskDoctor.${nurseId}`;
+function readDesk(profile) {
+  if (!profile?.nurse?.id) return null;
+  try {
+    return window.localStorage.getItem(deskKey(profile.nurse.id));
+  } catch {
+    return null;
+  }
+}
+
 export function NurseProvider({ children }) {
   // profile = { nurse, hospital, doctors, today }
   const [profile, setProfile] = useState(null);
@@ -36,6 +48,7 @@ export function NurseProvider({ children }) {
   // suggestions all use this copy), refreshed only on request.
   const [directory, setDirectory] = useState(NO_DIRECTORY);
   const directoryRequested = useRef(false);
+  const [deskDoctorId, setDeskDoctorId] = useState(null);
 
   const loadDirectory = useCallback(async ({ fresh = false } = {}) => {
     directoryRequested.current = true;
@@ -62,6 +75,7 @@ export function NurseProvider({ children }) {
         String(patient.mobile ?? existing?.mobile ?? '').replace(/^\+91/, ''),
         patient.hospitalPatientId ?? existing?.hospitalId ?? '',
         patient.lastSeen ?? existing?.lastSeen ?? '',
+        patient.doctorId ?? existing?.doctorId ?? null,
       ]]);
       return { ...current, patients: [row, ...current.patients.filter((item) => item.id !== patient.id)] };
     });
@@ -71,6 +85,7 @@ export function NurseProvider({ children }) {
     try {
       const next = await nurseRequest('/api/nurse/me');
       setProfile(next);
+      setDeskDoctorId(readDesk(next));
       setStatus('ready');
       return next;
     } catch (error) {
@@ -92,6 +107,7 @@ export function NurseProvider({ children }) {
       .then((next) => {
         if (!active) return;
         setProfile(next);
+        setDeskDoctorId(readDesk(next));
         setStatus('ready');
       })
       .catch((error) => {
@@ -105,21 +121,44 @@ export function NurseProvider({ children }) {
   }, []);
 
   const login = useCallback(async (mobile, pin) => {
-    await nurseRequest('/api/nurse/login', { body: { mobile, pin }, method: 'POST' });
+    const result = await nurseRequest('/api/nurse/login', { body: { mobile, pin }, method: 'POST' });
+    // A fresh login asks which doctor she is working with today.
+    try {
+      if (result?.nurse?.id) window.localStorage.removeItem(deskKey(result.nurse.id));
+    } catch {
+      // Private mode: she is simply asked again next time.
+    }
     return refresh();
   }, [refresh]);
+
+  const chooseDeskDoctor = useCallback((doctorId) => {
+    setDeskDoctorId(doctorId);
+    try {
+      if (profile?.nurse?.id) window.localStorage.setItem(deskKey(profile.nurse.id), doctorId);
+    } catch {
+      // Kept for this page only.
+    }
+  }, [profile]);
+
+  const doctors = profile?.doctors;
+  const deskDoctor = useMemo(() => {
+    const list = doctors || [];
+    if (list.length === 1) return list[0];
+    return list.find((item) => item.id === deskDoctorId) || null;
+  }, [deskDoctorId, doctors]);
 
   const logout = useCallback(async () => {
     await nurseRequest('/api/nurse/logout', { body: {}, method: 'POST' }).catch(() => undefined);
     directoryRequested.current = false;
     setDirectory(NO_DIRECTORY);
+    setDeskDoctorId(null);
     setProfile(null);
     setStatus('signed_out');
   }, []);
 
   const value = useMemo(
-    () => ({ directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
-    [directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
+    () => ({ chooseDeskDoctor, deskDoctor, directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
+    [chooseDeskDoctor, deskDoctor, directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
   );
   return <NurseContext value={value}>{children}</NurseContext>;
 }

@@ -1,4 +1,5 @@
 import { callCare, dateOrNull, nurseRoute, text, uuidOrNull } from '@/lib/server/nurse-api';
+import { forgetDirectory } from '@/lib/server/nurse-directory';
 
 // Start / correct / close care plans.
 export default nurseRoute(['POST'], async (request, response, nurse) => {
@@ -47,6 +48,43 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
       ...base,
       p_plan_id: uuidOrNull(body.planId),
       p_outcome: body.outcome === 'delivered' ? 'delivered' : 'ended',
+      p_date: dateOrNull(body.date),
+    });
+    return response.status(200).json(view);
+  }
+
+  // OI-TI / IUI cycles.
+  if (body.action === 'start_cycle') {
+    const view = await callCare('care_nurse_start_cycle', {
+      ...base,
+      p_patient_id: uuidOrNull(body.patientId),
+      p_protocol: 'oi_ti_iui',
+      p_person_name: text(body.personName, 80),
+      p_partner_name: text(body.partnerName, 80),
+      p_anchor: dateOrNull(body.anchor),
+      p_care_doctor_id: uuidOrNull(body.careDoctorId),
+      p_doctor_name: text(body.doctorName, 80),
+    });
+    forgetDirectory(nurse.hospitalId);
+    return response.status(200).json(view);
+  }
+
+  if (body.action === 'update_cycle') {
+    const view = await callCare('care_nurse_update_cycle', {
+      ...base,
+      p_cycle_id: uuidOrNull(body.cycleId),
+      p_anchor: dateOrNull(body.anchor),
+      p_person_name: text(body.personName, 80),
+      p_partner_name: body.partnerName === undefined ? null : text(body.partnerName, 80) ?? '',
+    });
+    return response.status(200).json(view);
+  }
+
+  if (body.action === 'close_cycle') {
+    const view = await callCare('care_nurse_close_cycle', {
+      ...base,
+      p_cycle_id: uuidOrNull(body.cycleId),
+      p_outcome: ['positive', 'negative', 'stopped'].includes(body.outcome) ? body.outcome : null,
       p_date: dateOrNull(body.date),
     });
     return response.status(200).json(view);
