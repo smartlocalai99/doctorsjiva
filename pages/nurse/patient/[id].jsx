@@ -21,7 +21,7 @@ import { CycleSummary, DoctorSheet, PatientHeader, PlanSummary } from '@/compone
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { planDoctor } from '@/lib/nurse-directory';
-import { buildTimeline, formatDate, withParentRecords } from '@/lib/nurse-schedule';
+import { buildTimeline, formatDate, suggestedNextDate, withParentRecords } from '@/lib/nurse-schedule';
 
 export default function NursePatientPage() {
   const { status } = useNurse();
@@ -42,12 +42,6 @@ function initialDoctor(view, hospitalDoctors, deskDoctor) {
     return { careDoctorId: current.careDoctorId, department: current.department, key: current.careDoctorId, name: current.name };
   }
   return { careDoctorId: null, department: current.department || 'general', key: 'other', name: current.name };
-}
-
-// The next visit the patient already has (if still ahead).
-function savedNextDate(view) {
-  const last = view.lastFollowup?.nextDate;
-  return last && last >= view.today ? last : '';
 }
 
 // Plan / ID actions answer with the basic page (no extra tests or dates).
@@ -113,7 +107,7 @@ function PatientScreen() {
     };
   }, [applyFreshView, patientId]);
 
-  const dirty = Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || note.trim().length > 0;
+  const dirty = nextTouched || Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || note.trim().length > 0;
   useEffect(() => {
     // Tells the frame not to auto-reload for a newer deploy.
     window.__drjivaNurseDirty = dirty;
@@ -175,7 +169,7 @@ function PatientScreen() {
   const nextCard = cards.find((card) => card.key === nextKey) || null;
   const nextValue = nextTouched
     ? nextDate
-    : nextCard?.date && nextCard.date >= today ? nextCard.date : savedNextDate(view);
+    : suggestedNextDate(cards, nextCard, today, view.lastFollowup?.nextDate);
   const changeCount = Object.keys(changes).length + Object.keys(dates).length;
   // Arrived from "New pregnancy" on the search screen.
   const STARTED = {
@@ -257,7 +251,8 @@ function PatientScreen() {
           return { date, planId, visitId };
         });
       // The next visit's card keeps the date the patient was given.
-      if (nextCard?.kind === 'visit' && nextValue && nextValue !== nextCard.date) {
+      // Only a date the nurse picked moves that visit; a suggested one belongs to the visit it came from.
+      if (nextTouched && nextCard?.kind === 'visit' && nextValue && nextValue !== nextCard.date) {
         visitDates.push({ date: nextValue, planId: nextCard.plan.id, visitId: nextCard.visit.id });
       }
       const extraDates = Object.entries(dates)
@@ -280,7 +275,7 @@ function PatientScreen() {
         const [, cycleId, stepId] = key.split(':');
         stepEntry(cycleId, stepId).date = date;
       }
-      if (nextCard?.kind === 'cycle' && nextValue && nextValue !== nextCard.date) {
+      if (nextTouched && nextCard?.kind === 'cycle' && nextValue && nextValue !== nextCard.date) {
         for (const step of nextCard.steps) stepEntry(nextCard.cycle.id, step.id).date = nextValue;
       }
       const cycleSteps = [...stepMap.values()];
