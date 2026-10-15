@@ -11,7 +11,9 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
 
   const items = Array.isArray(body.items) ? body.items.slice(0, 200) : [];
   const cleanItems = items
-    .map((item) => ({ planId: uuidOrNull(item?.planId), itemId: uuidOrNull(item?.itemId), status: item?.status }))
+    .map((item) => ({ planId: uuidOrNull(item?.planId), itemId: uuidOrNull(item?.itemId), status: item?.status,
+      ...(item && 'doneOn' in item ? { doneOn: dateOrNull(item.doneOn) } : {}),
+    }))
     .filter((item) => item.planId && item.itemId && STATUSES.has(item.status));
   const extras = Array.isArray(body.extraItems) ? body.extraItems.slice(0, 100) : [];
   const cleanExtras = extras
@@ -30,6 +32,7 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
   });
   if (
     cleanItems.length !== items.length ||
+    cleanItems.some((item) => 'doneOn' in item && !item.doneOn) ||
     cleanExtras.length !== extras.length ||
     visitDates.some((entry) => !entry.planId || !entry.visitId) ||
     extraDates.some((entry) => !entry.id || !entry.date) ||

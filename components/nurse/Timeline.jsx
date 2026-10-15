@@ -57,7 +57,7 @@ function DateControl({ hint, label, max, min, onChange, readOnly = false, staged
   );
 }
 
-function ItemRow({ item, label, note, onToggle, parent, recorded, staged, state, who }) {
+function ItemRow({ doneDate, item, label, note, onDoneDate, onToggle, parent, recorded, staged, state, today, who }) {
   const status = item.status;
   return (
     <li className={`nurse-tl-item nurse-check-${state}`}>
@@ -69,6 +69,13 @@ function ItemRow({ item, label, note, onToggle, parent, recorded, staged, state,
         {note ? <span className="nurse-tl-note">{note}</span> : null}
         {staged ? <em className="nurse-check-staged">Not saved yet</em> : recorded ? <em className="nurse-check-recorded">{recorded}</em> : null}
         {parent && !staged && !item.status ? <em className="nurse-check-parent">{parent}</em> : null}
+        {status === 'done' && onDoneDate ? (
+          <label className="nurse-done-date">
+            Done on
+            <input aria-label={`Done on for ${label}`} type="date" max={today} value={doneDate || today}
+              onChange={(event) => { if (event.target.value) onDoneDate(event.target.value); }} />
+          </label>
+        ) : null}
       </div>
       <div className="nurse-tl-item-actions" role="group" aria-label={`Status of ${label}`}>
         <button aria-pressed={status === 'done'} className="nurse-choice nurse-choice-done" type="button" onClick={() => onToggle(status === 'done' ? null : 'done')}>
@@ -87,7 +94,7 @@ function recordedText(status, doneOn, by) {
   return `${status === 'done' ? `Done ${formatDate(doneOn, SHORT)}` : 'Not needed'}${by ? ` · ${by}` : ''}`;
 }
 
-function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggleCycle, onToggleExtra, onToggleItem, removing, today }) {
+function TimelineCard({ card, changes, doneDates, isNext, multiPlan, onDoneDate, onRemoveExtra, onToggleCycle, onToggleExtra, onToggleItem, removing, today }) {
   const state = isNext ? 'next' : card.state;
   const tag =
     card.kind === 'extra' ? 'From case sheet'
@@ -127,12 +134,15 @@ function TimelineCard({ card, changes, isNext, multiPlan, onRemoveExtra, onToggl
               return (
                 <ItemRow
                   item={{ ...original, status }}
+                  doneDate={doneDates[`${card.plan.id}:${original.id}`] || original.doneOn || today}
                   key={original.id}
                   label={original.conditional ? `${original.labelEn} (if doctor says)` : original.labelEn}
                   onToggle={(next) => onToggleItem(card.plan.id, original, next)}
+                  onDoneDate={(date) => onDoneDate(card.plan.id, original, date)}
                   parent={parentRecordText(original.parentRecord)}
                   recorded={recordedText(original.status, original.doneOn, original.nurseName)}
-                  staged={Boolean(staged)}
+                  staged={Boolean(staged) || Boolean(doneDates[`${card.plan.id}:${original.id}`])}
+                  today={today}
                   state={itemState({ ...original, status }, today)}
                 />
               );
@@ -185,11 +195,13 @@ export function Timeline({
   cards,
   changes,
   dates,
+  doneDates = {},
   multiPlan,
   nextDate,
   nextKey,
   onCycleDate,
   onDate,
+  onDoneDate,
   onNextDate,
   onRemoveExtra,
   onToggleCycle,
@@ -230,9 +242,11 @@ export function Timeline({
             <TimelineCard
               card={card}
               changes={changes}
+              doneDates={doneDates}
               isNext={isNext}
               multiPlan={multiPlan}
               onRemoveExtra={onRemoveExtra}
+              onDoneDate={onDoneDate}
               onToggleCycle={onToggleCycle}
               onToggleExtra={onToggleExtra}
               onToggleItem={onToggleItem}

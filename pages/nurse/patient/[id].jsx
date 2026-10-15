@@ -74,6 +74,7 @@ function PatientScreen() {
   const [doctor, setDoctor] = useState({ careDoctorId: null, department: 'general', key: '', name: '' });
   const [changes, setChanges] = useState({});
   const [dates, setDates] = useState({});
+  const [doneDates, setDoneDates] = useState({});
   // The next visit date follows the Next card until the nurse sets one.
   const [nextDate, setNextDate] = useState('');
   const [nextTouched, setNextTouched] = useState(false);
@@ -107,7 +108,7 @@ function PatientScreen() {
     };
   }, [applyFreshView, patientId]);
 
-  const dirty = nextTouched || Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || note.trim().length > 0;
+  const dirty = nextTouched || Object.keys(changes).length > 0 || Object.keys(dates).length > 0 || Object.keys(doneDates).length > 0 || note.trim().length > 0;
   useEffect(() => {
     // Tells the frame not to auto-reload for a newer deploy.
     window.__drjivaNurseDirty = dirty;
@@ -170,7 +171,7 @@ function PatientScreen() {
   const nextValue = nextTouched
     ? nextDate
     : suggestedNextDate(cards, nextCard, today, view.lastFollowup?.nextDate);
-  const changeCount = Object.keys(changes).length + Object.keys(dates).length;
+  const changeCount = new Set([...Object.keys(changes), ...Object.keys(doneDates)]).size + Object.keys(dates).length;
   // Arrived from "New pregnancy" on the search screen.
   const STARTED = {
     child: 'Child added. The parent’s DrJiva app now shows the vaccine dates.',
@@ -183,6 +184,10 @@ function PatientScreen() {
   const toggleItem = (planId, item, next) => {
     touch();
     setChanges((current) => toggle(current, `${planId}:${item.id}`, item.status, next));
+  };
+  const changeDoneDate = (planId, item, date) => {
+    touch();
+    setDoneDates((current) => ({ ...current, [`${planId}:${item.id}`]: date }));
   };
   const toggleCycle = (cycleId, step, next) => {
     touch();
@@ -235,11 +240,13 @@ function PatientScreen() {
     setSavedNotice('');
     try {
       const entries = Object.entries(changes);
-      const items = entries
+      const itemChanges = { ...Object.fromEntries(Object.keys(doneDates).map((key) => [key, 'done'])), ...changes };
+      const items = Object.entries(itemChanges)
         .filter(([key]) => !key.startsWith('extra:') && !key.startsWith('cyc:'))
         .map(([key, status]) => {
           const [planId, itemId] = key.split(':');
-          return { itemId, planId, status };
+          const doneOn = doneDates[key];
+          return { itemId, planId, status, ...(status === 'done' && doneOn ? { doneOn } : {}) };
         });
       const extraItems = entries
         .filter(([key]) => key.startsWith('extra:'))
@@ -298,6 +305,7 @@ function PatientScreen() {
       setView((current) => mergeView(current, saved));
       setChanges({});
       setDates({});
+      setDoneDates({});
       setNote('');
       setNextDate('');
       setNextTouched(false);
@@ -390,11 +398,13 @@ function PatientScreen() {
             cards={cards}
             changes={changes}
             dates={dates}
+            doneDates={doneDates}
             multiPlan={shownPlans.length > 1}
             nextDate={nextValue}
             nextKey={nextKey}
             onCycleDate={setCycleCardDate}
             onDate={setCardDate}
+            onDoneDate={changeDoneDate}
             onNextDate={changeNextDate}
             onRemoveExtra={(item) => void removeExtra(item)}
             onToggleCycle={toggleCycle}
