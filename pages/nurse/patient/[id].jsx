@@ -20,6 +20,7 @@ import {
 import { CycleSummary, DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
+import { planDoctor } from '@/lib/nurse-directory';
 import { buildTimeline, formatDate, withParentRecords } from '@/lib/nurse-schedule';
 
 export default function NursePatientPage() {
@@ -146,7 +147,18 @@ function PatientScreen() {
   const patient = view.patient;
   const hasPregnancy = view.plans.some((plan) => plan.type === 'pregnancy');
   const cycles = view.cycles || [];
-  const department = doctor.department && doctor.department !== 'general' ? doctor.department : deskDoctor?.department || 'general';
+  // The buttons follow the doctor the nurse works with today (Dr. Mounika:
+  // pregnancy and IUI; Dr. Sudarshan: child), else the patient's doctor.
+  const department =
+    deskDoctor?.department && deskDoctor.department !== 'general'
+      ? deskDoctor.department
+      : doctor.department && doctor.department !== 'general' ? doctor.department : 'general';
+  // A new pregnancy or IUI goes to the gynecologist, a child to the
+  // pediatrician; the patient's own doctor only if there is none.
+  const sheetDoctor = (kind) => {
+    const match = planDoctor(hospitalDoctors, kind);
+    return match ? { careDoctorId: match.id, department: match.department, key: match.id, name: match.name } : doctor;
+  };
   // The desk doctor's own plans: Dr. Sudarshan (children) sees the child
   // plans, Dr. Mounika the pregnancy and cycles. Everything if that would
   // leave nothing.
@@ -433,10 +445,10 @@ function PatientScreen() {
         />
       ) : null}
       {sheet?.type === 'pregnancy' ? (
-        <StartPregnancySheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
+        <StartPregnancySheet doctor={sheetDoctor('pregnancy')} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
       {sheet?.type === 'cycle' ? (
-        <StartCycleSheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
+        <StartCycleSheet doctor={sheetDoctor('cycle')} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
       {sheet?.type === 'cycleDayOne' ? (
         <ChangeDayOneSheet cycle={sheet.cycle} onClose={() => setSheet(null)} onDone={onPlanChanged} today={today} />
@@ -445,7 +457,7 @@ function PatientScreen() {
         <CloseCycleSheet cycle={sheet.cycle} onClose={() => setSheet(null)} onDone={onPlanChanged} today={today} />
       ) : null}
       {sheet?.type === 'child' ? (
-        <AddChildSheet doctor={doctor} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
+        <AddChildSheet doctor={sheetDoctor('child')} onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} today={today} />
       ) : null}
       {sheet?.type === 'close' ? (
         <ClosePlanSheet onClose={() => setSheet(null)} onDone={onPlanChanged} plan={sheet.plan} today={today} />

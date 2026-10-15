@@ -80,6 +80,7 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
         {date ? (
           <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p>
         ) : null}
+        {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !date || motherName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start pregnancy'}
@@ -256,6 +257,7 @@ export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
             <button aria-checked={gender === null} role="radio" type="button" onClick={() => setGender(null)}>Not set</button>
           </div>
         </div>
+        {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child schedule'}
@@ -436,6 +438,7 @@ export function StartCycleSheet({ doctor, onClose, onDone, patient, today }) {
         }}
       >
         <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
+        {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || !anchor || personName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start cycle'}
@@ -446,7 +449,7 @@ export function StartCycleSheet({ doctor, onClose, onDone, patient, today }) {
 }
 
 // From the home screen: her mobile number, then the cycle, in one go.
-export function NewCycleSheet({ deskDoctor, onClose, onStarted, today }) {
+export function NewCycleSheet({ doctor, onClose, onStarted, today }) {
   const [mobile, setMobile] = useState('');
   const [personName, setPersonName] = useState('');
   const [partnerName, setPartnerName] = useState('');
@@ -462,7 +465,7 @@ export function NewCycleSheet({ deskDoctor, onClose, onStarted, today }) {
       const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: personName }, method: 'POST' });
       const patient = view.patient;
       await nurseRequest('/api/nurse/plan', {
-        body: { action: 'start_cycle', anchor, careDoctorId: deskDoctor?.id || null, partnerName, patientId: patient.id, personName },
+        body: { action: 'start_cycle', anchor, careDoctorId: doctor?.id || null, partnerName, patientId: patient.id, personName },
         method: 'POST',
       });
       onStarted(patient);
@@ -484,6 +487,7 @@ export function NewCycleSheet({ deskDoctor, onClose, onStarted, today }) {
           <small>The number she opens DrJiva with. She gets a reminder for each step.</small>
         </label>
         <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
+        {doctor ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || !anchor || personName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start cycle'}
@@ -561,7 +565,7 @@ export function CloseCycleSheet({ cycle, onClose, onDone, today }) {
 }
 
 // From the home screen for the children's doctor: parent's mobile + child.
-export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
+export function NewChildSheet({ doctor, onClose, onStarted, today }) {
   const [mobile, setMobile] = useState('');
   const [parentName, setParentName] = useState('');
   const [childName, setChildName] = useState('');
@@ -578,7 +582,7 @@ export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
       const view = await nurseRequest('/api/nurse/patient', { body: { mobile, name: parentName }, method: 'POST' });
       const patient = view.patient;
       await nurseRequest('/api/nurse/plan', {
-        body: { action: 'add_child', birthDate, careDoctorId: deskDoctor?.id || null, childName: childName.trim() || UNNAMED_CHILD, gender, patientId: patient.id },
+        body: { action: 'add_child', birthDate, careDoctorId: doctor?.id || null, childName: childName.trim() || UNNAMED_CHILD, gender, patientId: patient.id },
         method: 'POST',
       });
       onStarted(patient);
@@ -622,6 +626,7 @@ export function NewChildSheet({ deskDoctor, onClose, onStarted, today }) {
             <button aria-checked={gender === null} role="radio" type="button" onClick={() => setGender(null)}>Not set</button>
           </div>
         </div>
+        {doctor ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
         <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child'}

@@ -11,7 +11,7 @@ import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { useRemovePatient } from '@/components/nurse/RemovePatient';
 import { NewChildSheet, NewCycleSheet, NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
-import { isPatientOf, patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
+import { isPatientOf, patientsOfDoctor, planDoctor, searchPatients } from '@/lib/nurse-directory';
 import { formatMobile } from '@/lib/nurse-schedule';
 
 const RECENT_COUNT = 4;
@@ -334,7 +334,7 @@ function PatientSearch({ onChangeDoctor }) {
           doctors={profile?.doctors || []}
           onClose={() => setStartSheet(null)}
           onStarted={(patient) => {
-            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
+            rememberPatient({ ...patient, doctorId: planDoctor(profile?.doctors, 'pregnancy', deskDoctor)?.id, lastSeen: profile?.today });
             void router.push(`/nurse/patient/${patient.id}?started=pregnancy`);
           }}
           today={profile?.today}
@@ -342,10 +342,10 @@ function PatientSearch({ onChangeDoctor }) {
       ) : null}
       {startSheet === 'cycle' ? (
         <NewCycleSheet
-          deskDoctor={deskDoctor}
+          doctor={planDoctor(profile?.doctors, 'cycle', deskDoctor)}
           onClose={() => setStartSheet(null)}
           onStarted={(patient) => {
-            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
+            rememberPatient({ ...patient, doctorId: planDoctor(profile?.doctors, 'cycle', deskDoctor)?.id, lastSeen: profile?.today });
             void router.push(`/nurse/patient/${patient.id}?started=cycle`);
           }}
           today={profile?.today}
@@ -353,10 +353,10 @@ function PatientSearch({ onChangeDoctor }) {
       ) : null}
       {startSheet === 'child' ? (
         <NewChildSheet
-          deskDoctor={deskDoctor}
+          doctor={planDoctor(profile?.doctors, 'child', deskDoctor)}
           onClose={() => setStartSheet(null)}
           onStarted={(patient) => {
-            rememberPatient({ ...patient, doctorId: deskDoctor?.id, lastSeen: profile?.today });
+            rememberPatient({ ...patient, doctorId: planDoctor(profile?.doctors, 'child', deskDoctor)?.id, lastSeen: profile?.today });
             void router.push(`/nurse/patient/${patient.id}?started=child`);
           }}
           today={profile?.today}
