@@ -2139,6 +2139,46 @@ textarea:focus-visible {
     @apply flex min-h-16 items-center gap-3 px-4 py-3 text-ink transition hover:bg-canvas;
   }
 
+  /* Swipe a patient row left to show "Remove". */
+  .nurse-swipe {
+    @apply relative overflow-hidden;
+  }
+
+  .nurse-swipe-row {
+    @apply relative bg-white;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .nurse-swipe-remove {
+    @apply absolute inset-y-0 right-0 flex w-24 flex-col items-center justify-center gap-1 bg-red-600 text-xs font-extrabold text-white;
+  }
+
+  .nurse-swipe-remove:focus-visible {
+    @apply outline-2 outline-offset-[-4px] outline-white;
+  }
+
+  .nurse-danger-button {
+    @apply inline-flex items-center justify-center rounded-2xl bg-red-600 px-4 font-extrabold text-white transition hover:bg-red-700 disabled:opacity-60;
+  }
+
+  .nurse-remove-who {
+    @apply grid gap-0.5 rounded-2xl bg-canvas px-4 py-3;
+  }
+
+  .nurse-remove-who span {
+    @apply text-sm font-semibold text-muted;
+  }
+
+  .nurse-remove-points {
+    @apply grid list-disc gap-2 pl-5 text-[15px] font-semibold leading-6 text-ink;
+  }
+
+  .nurse-remove-actions {
+    @apply grid grid-cols-2 gap-3;
+  }
+
   .nurse-avatar {
     @apply grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-extrabold text-brand;
   }

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
+import { useRemovePatient } from '@/components/nurse/RemovePatient';
 import { useNurse } from '@/contexts/NurseContext';
 import { patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
 
@@ -21,6 +22,7 @@ export default function NursePatientsPage() {
 // desk already loaded; filtering happens on the phone.
 function AllPatients() {
   const { deskDoctor, directory, ensureDirectory, loadDirectory, profile } = useNurse();
+  const { removeSheet, requestRemove } = useRemovePatient();
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState('mine');
   const [shown, setShown] = useState(PAGE);
@@ -109,7 +111,7 @@ function AllPatients() {
               <p className="nurse-muted" role="status">{filtered.length} {filtered.length === 1 ? 'match' : 'matches'}</p>
             ) : null}
             <div className="nurse-patient-list">
-              {filtered.slice(0, shown).map((patient) => <PatientRow key={patient.id} patient={patient} />)}
+              {filtered.slice(0, shown).map((patient) => <PatientRow key={patient.id} onRemove={requestRemove} patient={patient} />)}
             </div>
             {filtered.length > shown ? (
               <button className="secondary-button nurse-big-button" type="button" onClick={() => setShown((count) => count + PAGE)}>
@@ -121,6 +123,7 @@ function AllPatients() {
           <p className="nurse-muted">{query ? `No patient matches “${query.trim()}”.` : 'No patients yet.'}</p>
         )}
       </section>
+      {removeSheet}
     </NurseFrame>
   );
 }

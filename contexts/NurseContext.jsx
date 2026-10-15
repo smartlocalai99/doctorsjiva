@@ -81,6 +81,11 @@ export function NurseProvider({ children }) {
     });
   }, []);
 
+  // A patient removed from the hospital list leaves it at once.
+  const forgetPatient = useCallback((patientId) => {
+    setDirectory((current) => ({ ...current, patients: current.patients.filter((item) => item.id !== patientId) }));
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const next = await nurseRequest('/api/nurse/me');
@@ -157,8 +162,8 @@ export function NurseProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ chooseDeskDoctor, deskDoctor, directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
-    [chooseDeskDoctor, deskDoctor, directory, ensureDirectory, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
+    () => ({ chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
+    [chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
   );
   return <NurseContext value={value}>{children}</NurseContext>;
 }

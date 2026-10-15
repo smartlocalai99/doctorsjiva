@@ -8,6 +8,7 @@ import { DeskDoctorPicker } from '@/components/nurse/DeskDoctorPicker';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
+import { useRemovePatient } from '@/components/nurse/RemovePatient';
 import { NewChildSheet, NewCycleSheet, NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { isPatientOf, patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
@@ -51,6 +52,7 @@ function mobileDigits(query) {
 function PatientSearch({ onChangeDoctor }) {
   const router = useRouter();
   const { deskDoctor, directory, ensureDirectory, loadDirectory, profile, rememberPatient } = useNurse();
+  const { removeSheet, requestRemove } = useRemovePatient();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
@@ -318,7 +320,7 @@ function PatientSearch({ onChangeDoctor }) {
           </div>
         ) : mine.length ? (
           <div className="nurse-patient-list">
-            {mine.slice(0, RECENT_COUNT).map((patient) => <PatientRow key={patient.id} patient={patient} />)}
+            {mine.slice(0, RECENT_COUNT).map((patient) => <PatientRow key={patient.id} onRemove={requestRemove} patient={patient} />)}
           </div>
         ) : (
           <p className="nurse-muted">
@@ -360,6 +362,7 @@ function PatientSearch({ onChangeDoctor }) {
           today={profile?.today}
         />
       ) : null}
+      {removeSheet}
     </NurseFrame>
   );
 }
