@@ -419,7 +419,7 @@ function PatientScreen() {
       {!nextCard ? <NextVisitCard nextDate={nextValue} onNextDate={changeNextDate} today={today} /> : null}
 
       <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'extra' })}>
-        <ClipboardPlus aria-hidden="true" size={20} /> Add test or scan from the case sheet
+        <ClipboardPlus aria-hidden="true" size={20} /> Add tests or scans from the case sheet
       </button>
 
       <section className="nurse-card" aria-labelledby="note-heading">

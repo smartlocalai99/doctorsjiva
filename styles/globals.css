@@ -2084,6 +2084,48 @@ textarea:focus-visible {
     padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 
+  .nurse-test-hint {
+    @apply text-[15px] font-semibold text-muted;
+  }
+
+  .nurse-test-group {
+    @apply grid gap-2;
+  }
+
+  .nurse-test-group legend {
+    @apply mb-2 text-[15px] font-extrabold text-ink;
+  }
+
+  .nurse-test-chips {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .nurse-test-chip {
+    @apply inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-white px-3.5 text-[15px] font-bold text-ink transition;
+  }
+
+  .nurse-test-chip[aria-pressed='true'] {
+    @apply border-brand bg-brand text-white;
+  }
+
+  .nurse-test-other {
+    @apply grid grid-cols-[1fr_auto] gap-2;
+  }
+
+  .nurse-test-other .secondary-button {
+    @apply inline-flex min-h-14 items-center gap-1 rounded-2xl px-4 font-extrabold;
+  }
+
+  /* Stays at the bottom of the sheet while the chips scroll; covers the
+     sheet's own bottom padding so nothing shows through under the button. */
+  .nurse-test-submit {
+    @apply sticky -mx-5 bg-white px-5 pt-3 shadow-[0_-10px_16px_rgba(255,255,255,0.95)];
+    --sheet-pad-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    bottom: calc(-1 * var(--sheet-pad-bottom));
+    margin-bottom: calc(-1 * var(--sheet-pad-bottom));
+    padding-bottom: var(--sheet-pad-bottom);
+  }
+
   .nurse-sheet-head {
     @apply flex items-center justify-between gap-3;
   }
