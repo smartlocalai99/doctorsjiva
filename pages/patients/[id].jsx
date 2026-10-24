@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { PrepareList, StatusTag, dayDate, shortDate } from '@/components/doctor/DeskParts';
+import { DESK_POLL_MS } from '@/contexts/DoctorDeskContext';
 import { cycleDayOn, planPrepare, pregnancyOn } from '@/lib/doctor-desk';
 import { childAge, daysBetween, formatDate, formatMobile, itemState, ordinal, visitState } from '@/lib/nurse-schedule';
 
@@ -14,19 +15,33 @@ export default function PatientPage() {
   const [view, setView] = useState(null);
   const [error, setError] = useState('');
 
+  // Read again every 20 seconds while on screen, like Today and Calendar,
+  // so what the nurse saves shows up here too.
   useEffect(() => {
     if (!id) return undefined;
     let active = true;
-    fetch(`/api/doctor/patient?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
+    let shown = false;
+    const read = () => fetch(`/api/doctor/patient?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
       .then(async (response) => {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Could not load this patient.');
-        if (active) setView(result);
+        if (!active) return;
+        shown = true;
+        setView(result);
+        setError('');
       })
       .catch((loadError) => {
-        if (active) setError(loadError.message);
+        // A failed background read keeps what is on screen.
+        if (active && !shown) setError(loadError.message);
       });
-    return () => { active = false; };
+    void read();
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void read();
+    }, DESK_POLL_MS);
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+    };
   }, [id]);
 
   const patient = view?.patient;
