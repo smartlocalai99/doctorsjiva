@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useNurse } from '@/contexts/NurseContext';
 
+// Typed or pasted with +91 / 0 in front: keep the last 10 digits.
+function tenDigits(value) {
+  const digits = value.replace(/\D/g, '');
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 export function NurseLogin() {
   const { login } = useNurse();
   const [mobile, setMobile] = useState('');
@@ -57,13 +63,12 @@ export function NurseLogin() {
                   aria-label="Mobile number"
                   autoComplete="tel"
                   inputMode="numeric"
-                  maxLength={10}
                   name="mobile"
                   spellCheck={false}
                   value={mobile}
                   onChange={(event) => {
                     setError('');
-                    setMobile(event.target.value.replace(/\D/g, '').slice(0, 10));
+                    setMobile(tenDigits(event.target.value));
                   }}
                 />
               </div>

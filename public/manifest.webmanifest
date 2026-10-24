@@ -1,7 +1,7 @@
 {
-  "name": "DRJIVA Doctor Studio",
+  "name": "DRJIVA Doctors",
   "short_name": "DRJIVA Doctors",
-  "description": "Create, publish and manage trusted health content for DRJIVA.",
+  "description": "Today's patients, their visits and who didn't come.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -9,7 +9,10 @@
   "orientation": "portrait-primary",
   "background_color": "#F4F7F8",
   "theme_color": "#2E7EBC",
-  "categories": ["medical", "health", "productivity"],
+  "categories": [
+    "medical",
+    "health"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

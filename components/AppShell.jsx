@@ -1,26 +1,17 @@
-/* eslint-disable @next/next/no-img-element -- doctor avatars are user-uploaded Supabase URLs */
-import {
-  CalendarHeart,
-  FilePlus2,
-  Home,
-  LogOut,
-  MonitorDown,
-  PanelsTopLeft,
-} from 'lucide-react';
+import { CalendarDays, LogOut, MonitorDown, Sun, Users } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { DoctorDeskProvider, useDoctorDesk } from '@/contexts/DoctorDeskContext';
 import { NurseProvider } from '@/contexts/NurseContext';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { AppLogo } from './AppLogo';
 
 const navigation = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/create', label: 'Publish', icon: FilePlus2 },
-  { href: '/posts', label: 'Content', icon: PanelsTopLeft },
-  { href: '/camps', label: 'Camps', icon: CalendarHeart },
+  { href: '/', label: 'Today', icon: Sun },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/patients', label: 'Patients', icon: Users },
 ];
 
 export function RouteGuard({ children }) {
@@ -47,14 +38,16 @@ export function RouteGuard({ children }) {
     );
   }
   if (isLogin) return children;
-  return <AppShell>{children}</AppShell>;
+  return <DoctorDeskProvider><AppShell>{children}</AppShell></DoctorDeskProvider>;
 }
 
 function AppShell({ children }) {
   const router = useRouter();
-  const { signOut } = useAuth();
-  const { profile } = useWorkspace();
+  const { session, signOut } = useAuth();
+  const { desk } = useDoctorDesk();
   const [installPrompt, setInstallPrompt] = useState(null);
+  const name = desk?.doctor?.name || session?.doctor?.display_name || 'Doctor';
+  const hospital = desk?.doctor?.hospitalName || session?.doctor?.hospital_name || '';
 
   useEffect(() => {
     const handlePrompt = (event) => {
@@ -72,76 +65,81 @@ function AppShell({ children }) {
   };
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
+    <div className="desk-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white px-5 py-6 lg:flex">
-        <AppLogo />
-        <nav className="mt-10 grid gap-2" aria-label="Main navigation">
+      <aside className="desk-sidebar" aria-label="Doctor desk">
+        <div className="desk-brand">
+          <Image alt="" height={36} src="/icons/drjiva-mark.png" width={36} />
+          <span>DrJiva</span>
+        </div>
+        <nav className="desk-nav" aria-label="Main navigation">
           {navigation.map((item) => <NavItem key={item.href} item={item} currentPath={router.pathname} />)}
         </nav>
         <div className="mt-auto grid gap-3">
           {installPrompt ? (
-            <button className="quiet-button justify-start" type="button" onClick={install}>
-              <MonitorDown size={18} /> Install app
+            <button className="desk-nav-item" type="button" onClick={install}>
+              <MonitorDown aria-hidden="true" size={19} /> Install app
             </button>
           ) : null}
-          <div className="rounded-2xl border border-line bg-canvas p-3">
-            <div className="flex items-center gap-3">
-                <Link className="profile-account-link flex min-w-0 flex-1 items-center gap-3" href="/profile" aria-label="Open profile">
-                  <Avatar profile={profile} />
-                  <span className="min-w-0"><strong className="block truncate text-sm">{profile?.display_name || 'Doctor'}</strong><small className="block truncate text-xs text-muted">{profile?.specialty || 'Complete your profile'}</small></span>
-                </Link>
-              <button className="icon-button" type="button" onClick={signOut} aria-label="Sign out">
-                <LogOut size={17} />
-              </button>
-            </div>
+          <div className="desk-account">
+            <span className="desk-avatar" aria-hidden="true">{initial(name)}</span>
+            <span className="min-w-0 flex-1">
+              <strong>{name}</strong>
+              <small>{hospital}</small>
+            </span>
+            <button className="desk-icon-button" type="button" onClick={signOut} aria-label="Sign out">
+              <LogOut aria-hidden="true" size={18} />
+            </button>
           </div>
         </div>
       </aside>
 
-      <header className="app-mobile-header sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur-xl lg:hidden">
-        <AppLogo compact />
-        <Link href="/profile" aria-label="Open profile"><Avatar profile={profile} /></Link>
+      <header className="desk-topbar">
+        <span className="desk-avatar" aria-hidden="true">{initial(name)}</span>
+        <div className="desk-topbar-who">
+          <strong>{name}</strong>
+          <span>{hospital}</span>
+        </div>
+        <button className="desk-icon-button" type="button" onClick={signOut} aria-label="Sign out">
+          <LogOut aria-hidden="true" size={19} />
+        </button>
       </header>
 
-      <main className="min-h-dvh pb-24 lg:ml-64 lg:pb-0" id="main-content">{children}</main>
+      <main className="desk-main" id="main-content">{children}</main>
 
-      <nav className="app-mobile-nav fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-white/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
-        {navigation.map((item) => <MobileNavItem key={item.href} item={item} currentPath={router.pathname} />)}
+      <nav className="desk-tabbar" aria-label="Main navigation">
+        {navigation.map((item) => <TabItem key={item.href} item={item} currentPath={router.pathname} />)}
       </nav>
     </div>
   );
 }
 
+function initial(name) {
+  return String(name).replace(/^Dr\.?\s*/i, '').slice(0, 1).toUpperCase() || 'D';
+}
+
+function isActive(item, currentPath) {
+  return item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
+}
+
 function NavItem({ item, currentPath }) {
   const Icon = item.icon;
-  const active = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
+  const active = isActive(item, currentPath);
   return (
-    <Link aria-current={active ? 'page' : undefined} className={`nav-item ${active ? 'nav-item-active' : ''}`} href={item.href}>
-      <Icon size={19} strokeWidth={2.1} />
+    <Link aria-current={active ? 'page' : undefined} className="desk-nav-item" href={item.href}>
+      <Icon aria-hidden="true" size={19} strokeWidth={active ? 2.4 : 2} />
       {item.label}
     </Link>
   );
 }
 
-function MobileNavItem({ item, currentPath }) {
+function TabItem({ item, currentPath }) {
   const Icon = item.icon;
-  const active = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
+  const active = isActive(item, currentPath);
   return (
-    <Link aria-current={active ? 'page' : undefined} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-semibold ${active ? 'text-brand' : 'text-muted'}`} href={item.href}>
-      <Icon size={21} strokeWidth={active ? 2.5 : 2} />
+    <Link aria-current={active ? 'page' : undefined} className="desk-tab" href={item.href}>
+      <span className="desk-tab-icon"><Icon aria-hidden="true" size={21} strokeWidth={active ? 2.4 : 2} /></span>
       {item.label}
     </Link>
-  );
-}
-
-function Avatar({ profile }) {
-  if (profile?.avatar_url) {
-    return <img className="size-10 rounded-full border border-line object-cover" src={profile.avatar_url} alt="" width="40" height="40" />;
-  }
-  return (
-    <span className="grid size-10 place-items-center rounded-full border border-line bg-slate-100 text-sm font-extrabold text-slate-600">
-      {(profile?.display_name || 'D').replace('Dr. ', '').slice(0, 1).toUpperCase()}
-    </span>
   );
 }

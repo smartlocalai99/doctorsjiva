@@ -1,17 +1,29 @@
-# DRJIVA Doctor Studio
+# DRJIVA Doctors
 
-An installable Next.js PWA for doctors to publish image/video health posts, review engagement, and manage their professional profile. New posts publish directly to the DRJIVA patient feed as soon as their media upload finishes.
+An installable Next.js PWA with two desks on the shared DRJIVA backend:
+
+- **Doctor desk** (`/`, `/calendar`, `/patients`): a doctor logs in with mobile number + 4-digit PIN and sees what the nurses recorded for her patients: who is coming today, what to have ready (pregnancy week, scans, vaccines, tests, OI-TI / IUI steps), who the nurse has seen, and who didn't come. Read-only.
+- **Nurse desk** (`/nurse`): nurses save visits, ticks and next visit dates. A saved visit is what marks a patient as "came" on the doctor desk.
+
+A doctor login (`doctors` table) is linked to her nurse-desk name (`care_doctors` + aliases) at her hospital (`doctors.hospital_id`). If no name matches, the desk says so instead of showing patients.
+
+### Visit status on the doctor desk
+
+| Status | Meaning |
+| --- | --- |
+| Coming today | Expected today, the nurse has not saved a visit yet |
+| Seen | The nurse saved a visit that day |
+| Didn't come | The day passed with no visit, and she has not come since |
+| Came late | Missed the day, came later |
+
+Without Supabase settings (local preview) the doctor desk shows sample Dhruva patients and the test doctor below can log in.
 
 ## Test doctor
 
-- Doctor: Dr. Ritish Reddy
 - Mobile: `9866531011`
 - Doctor code: `1234`
-- Specialty: Gastroenterology
-- Hospital: Asian Hospitals
-- Experience: 8 years
 
-The phone number is the doctor account key. The database migration stores the test code as a bcrypt hash in the private schema rather than plain text.
+The phone number is the doctor account key. Login codes are stored as bcrypt hashes in the private schema.
 
 ## Stack
 

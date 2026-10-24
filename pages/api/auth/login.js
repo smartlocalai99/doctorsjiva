@@ -9,10 +9,10 @@ export default async function handler(request, response) {
   }
   try {
     const doctor = await verifyDoctorLogin(request.body?.phone, request.body?.code);
-    if (!doctor) return response.status(401).json({ error: 'The mobile number or login code is incorrect.' });
+    if (!doctor) return response.status(401).json({ error: 'Mobile number or PIN is wrong.' });
     createDoctorSession(response, doctor);
     return response.status(200).json({ doctor });
   } catch {
-    return response.status(500).json({ error: 'Login is unavailable. Check the server configuration and try again.' });
+    return response.status(500).json({ error: 'Login is not working right now. Try again in a minute.' });
   }
 }
