@@ -1,28 +1,94 @@
-import { Phone, RefreshCw, Stethoscope } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FlaskConical, Phone, RefreshCw, Stethoscope, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { useDoctorDesk } from '@/contexts/DoctorDeskContext';
+import { useShell } from '@/contexts/ShellContext';
 import { childAge, formatDate, formatMobile, ordinal } from '@/lib/nurse-schedule';
 
 export const shortDate = (date) => formatDate(date, { day: 'numeric', month: 'short' });
 export const dayDate = (date) => formatDate(date, { weekday: 'short', day: 'numeric', month: 'short' });
 
 export function pregnancyText(pregnancy) {
-  return `${pregnancy.week} ${pregnancy.week === 1 ? 'week' : 'weeks'} · ${ordinal(pregnancy.month)} month`;
+  return `${pregnancy.week} ${pregnancy.week === 1 ? 'week' : 'weeks'}, ${ordinal(pregnancy.month)} month`;
 }
 
-// The left column of every row: how far along she is, the way the doctor
-// reads it. Weeks for a pregnancy, cycle day for IUI, age for a baby.
+export function initialOf(name) {
+  return String(name || '').replace(/^Dr\.?\s*/i, '').slice(0, 1).toUpperCase() || 'D';
+}
+
+// iOS navigation bar over a large title. The small title fades in once
+// the large one scrolls under the bar.
+export function PageHeader({ above, back, kicker, lead, title, trailing }) {
+  const titleRef = useRef(null);
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const node = titleRef.current;
+    if (!node || !('IntersectionObserver' in window)) return undefined;
+    const observer = new IntersectionObserver(([entry]) => setCompact(!entry.isIntersecting), { rootMargin: '-56px 0px 0px 0px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div className={`ios-navbar ${compact ? 'is-compact' : ''}`}>
+        <div className="ios-navbar-side">{back}</div>
+        <p className="ios-navbar-title" aria-hidden="true">{title}</p>
+        <div className="ios-navbar-side is-trailing">{trailing === undefined ? <NavActions /> : trailing}</div>
+      </div>
+      <header className="ios-largetitle">
+        {above}
+        {kicker ? <p className="ios-kicker">{kicker}</p> : null}
+        <h1 ref={titleRef}>{title}</h1>
+        {lead ? <div className="ios-lead">{lead}</div> : null}
+      </header>
+    </>
+  );
+}
+
+// Refresh (computers; phones pull down) and her picture, which opens settings.
+export function NavActions() {
+  const { refresh, refreshing } = useDoctorDesk();
+  const { openSettings } = useShell();
+  const { session } = useAuth();
+  const { desk } = useDoctorDesk();
+  const name = desk?.doctor?.name || session?.doctor?.display_name || 'Doctor';
+  return (
+    <>
+      <button className="ios-nav-icon is-wide-only" disabled={refreshing} type="button" onClick={refresh} aria-label="Refresh">
+        <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : ''} size={20} />
+      </button>
+      <button className="ios-nav-avatar" type="button" onClick={openSettings} aria-label="Settings and notifications">
+        {initialOf(name)}
+      </button>
+    </>
+  );
+}
+
+export function BackButton({ label = 'Back', onBack }) {
+  return (
+    <button className="ios-back" type="button" onClick={onBack}>
+      <ChevronLeft aria-hidden="true" size={28} strokeWidth={2.2} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+// The tile at the start of every row, like the coloured icons in iOS
+// Settings: weeks for a pregnancy, cycle day for IUI, age for a baby.
 function careMark(patient, appointment, today) {
   const pregnancy = appointment?.pregnancy || patient?.pregnancy;
   if (pregnancy) {
-    return { kind: 'pregnancy', label: `${pregnancy.week} weeks pregnant`, trimester: pregnancy.trimester, unit: 'wk', value: pregnancy.week };
+    return { kind: 'pregnancy', label: `${pregnancy.week} weeks pregnant`, unit: 'wk', value: pregnancy.week };
   }
   const day = appointment?.cycleDay ?? patient?.cycle?.day;
   if (day) return { kind: 'cycle', label: `Cycle day ${day}`, unit: 'day', value: day };
   if (patient?.child?.birthDate) {
     const [value, unit] = childAge(patient.child.birthDate, today).split(' ');
-    return { kind: 'child', label: `Baby, ${childAge(patient.child.birthDate, today)}`, unit: { months: 'mo', month: 'mo', weeks: 'wk', week: 'wk', years: 'yr', year: 'yr' }[unit] || '', value };
+    return { kind: 'child', label: `Baby, ${childAge(patient.child.birthDate, today)}`, unit: { months: 'mo', month: 'mo', weeks: 'wk', week: 'wk', years: 'yr', year: 'yr', days: 'd', day: 'd' }[unit] || '', value };
   }
   return { kind: 'visit', label: 'Follow-up' };
 }
@@ -30,21 +96,18 @@ function careMark(patient, appointment, today) {
 export function CareMark({ appointment, patient, today }) {
   const mark = careMark(patient, appointment, today);
   return (
-    <span className={`desk-mark is-${mark.kind}`} role="img" aria-label={mark.label}>
-      {mark.kind === 'visit' ? <Stethoscope aria-hidden="true" size={20} strokeWidth={1.8} /> : (
+    <span className={`ios-tile is-${mark.kind}`} role="img" aria-label={mark.label}>
+      {mark.kind === 'visit' ? <Stethoscope aria-hidden="true" size={21} strokeWidth={2} /> : (
         <>
           <b>{mark.value}</b>
           <small>{mark.unit}</small>
         </>
       )}
-      {mark.trimester ? (
-        <i aria-hidden="true">{[1, 2, 3].map((t) => <em className={t <= mark.trimester ? 'is-on' : ''} key={t} />)}</i>
-      ) : null}
     </span>
   );
 }
 
-// "6th month" / "OI-TI / IUI" / "Baby Arjun" next to the hospital ID.
+// "6th month" / "OI-TI / IUI" / "Baby Arjun" under the name.
 export function careText(patient, appointment) {
   const pregnancy = appointment?.pregnancy || patient?.pregnancy;
   if (pregnancy) return `${ordinal(pregnancy.month)} month`;
@@ -61,11 +124,17 @@ const STATUS = {
   upcoming: 'Booked',
 };
 
+function seenAt(appointment) {
+  if (!appointment.seenBy?.at) return '';
+  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(new Date(appointment.seenBy.at));
+}
+
 export function StatusTag({ appointment }) {
   const { status } = appointment;
+  const time = status === 'seen' ? seenAt(appointment) : '';
   return (
-    <span className={`desk-status is-${status}`}>
-      {status === 'late' ? `Came ${shortDate(appointment.cameOn)}` : STATUS[status]}
+    <span className={`ios-status is-${status}`}>
+      {status === 'late' ? `Came ${shortDate(appointment.cameOn)}` : time || STATUS[status]}
     </span>
   );
 }
@@ -76,7 +145,7 @@ export function PrepareList({ items, limit = 4 }) {
   const overdue = items.filter((item) => item.overdue);
   const due = items.filter((item) => !item.overdue);
   return (
-    <span className="desk-todo">
+    <span className="ios-todo">
       <TodoLine items={overdue} label="Overdue" limit={limit} tone="overdue" />
       <TodoLine items={due} label="To do" limit={limit} />
     </span>
@@ -86,20 +155,19 @@ export function PrepareList({ items, limit = 4 }) {
 function TodoLine({ items, label, limit, tone = '' }) {
   if (!items.length) return null;
   const shown = items.slice(0, limit);
+  const Icon = tone === 'overdue' ? TriangleAlert : FlaskConical;
   return (
-    <span className={`desk-todo-line ${tone ? `is-${tone}` : ''}`}>
-      <b>{label}</b>
-      <ul aria-label={label}>
-        {shown.map((item) => <li key={item.label}>{item.label}</li>)}
-        {items.length > shown.length ? <li className="is-more">{items.length - shown.length} more</li> : null}
-      </ul>
+    <span className={`ios-todo-line ${tone ? `is-${tone}` : ''}`}>
+      <Icon aria-hidden="true" size={14} strokeWidth={2.2} />
+      <span>
+        <span className="sr-only">{label}: </span>
+        <ul aria-label={label}>
+          {shown.map((item) => <li key={item.label}>{item.label}</li>)}
+          {items.length > shown.length ? <li className="is-more">{items.length - shown.length} more</li> : null}
+        </ul>
+      </span>
     </span>
   );
-}
-
-function seenAt(appointment) {
-  if (!appointment.seenBy?.at) return '';
-  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(new Date(appointment.seenBy.at));
 }
 
 // One expected visit: how far along, who, what to have ready, and whether
@@ -108,30 +176,34 @@ export function VisitRow({ appointment, footnote, patient, today, showDate = fal
   if (!patient) return null;
   // A missed day is in the past: show how far along she is now.
   const now = appointment.status === 'missed' || appointment.status === 'late';
-  const meta = [showDate ? dayDate(appointment.date) : null, patient.hospitalPatientId, careText(patient, now ? null : appointment, today)].filter(Boolean);
-  const time = seenAt(appointment);
+  const care = careText(patient, now ? null : appointment, today);
   return (
-    <li className={`desk-row is-${appointment.status}`}>
-      <Link className="desk-row-link" href={`/patients/${patient.id}`}>
+    <li className={`ios-cell is-${appointment.status}`}>
+      <Link className="ios-cell-link" href={`/patients/${patient.id}`}>
         <CareMark appointment={now ? null : appointment} patient={patient} today={today} />
-        <span className="desk-row-body">
-          <span className="desk-row-top">
-            <strong className="desk-row-name">{patient.name}</strong>
+        <span className="ios-cell-body">
+          <span className="ios-cell-top">
+            <strong className="ios-cell-title">{patient.name}</strong>
             <StatusTag appointment={appointment} />
           </span>
-          <span className="desk-row-meta">{meta.join(' · ')}</span>
+          <span className="ios-cell-sub">
+            {showDate ? <span>{dayDate(appointment.date)}</span> : null}
+            <span>{care}</span>
+            {patient.hospitalPatientId ? <span className="is-id">{patient.hospitalPatientId}</span> : null}
+          </span>
           {appointment.status === 'seen' && appointment.seenBy ? (
-            <span className="desk-row-line">Saved by {appointment.seenBy.nurse}{time ? ` at ${time}` : ''}</span>
+            <span className="ios-cell-line">Saved by {appointment.seenBy.nurse}</span>
           ) : (
             <PrepareList items={appointment.prepare} />
           )}
-          {appointment.note && appointment.status !== 'seen' ? <span className="desk-row-note">“{appointment.note}”</span> : null}
+          {appointment.note && appointment.status !== 'seen' ? <span className="ios-cell-note">{appointment.note}</span> : null}
         </span>
+        <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
       </Link>
       {appointment.status === 'missed' && patient.mobile ? (
-        <div className="desk-row-actions">
-          <a className="desk-call" href={`tel:+91${patient.mobile}`}>
-            <Phone aria-hidden="true" size={15} /> Call {formatMobile(patient.mobile)}
+        <div className="ios-cell-actions">
+          <a className="ios-call" href={`tel:+91${patient.mobile}`}>
+            <Phone aria-hidden="true" size={15} strokeWidth={2.4} /> Call {formatMobile(patient.mobile)}
           </a>
           {footnote ? <span>{footnote}</span> : null}
         </div>
@@ -142,25 +214,28 @@ export function VisitRow({ appointment, footnote, patient, today, showDate = fal
 
 export function DeskSection({ children, count, detail, id, link, title, tone = '' }) {
   return (
-    <section aria-labelledby={id} className={`desk-section ${tone ? `is-${tone}` : ''}`}>
-      <div className="desk-section-head">
-        <h2 id={id}>{title}{typeof count === 'number' ? <span className="desk-section-count">{count}</span> : null}</h2>
+    <section aria-labelledby={id} className={`ios-section ${tone ? `is-${tone}` : ''}`} id={`${id}-section`}>
+      <div className="ios-section-head">
+        <h2 id={id}>{title}</h2>
+        {typeof count === 'number' ? <span className="ios-section-count">{count}</span> : null}
         {link}
       </div>
-      {detail ? <p className="desk-section-detail">{detail}</p> : null}
-      <ul className="desk-list">{children}</ul>
+      <ul className="ios-group">{children}</ul>
+      {detail ? <p className="ios-section-foot">{detail}</p> : null}
     </section>
   );
 }
 
 export function EmptyRow({ children }) {
-  return <li className="desk-list-empty">{children}</li>;
+  return <li className="ios-empty">{children}</li>;
 }
 
 export function DeskLoading() {
   return (
-    <div className="desk-skeleton" aria-label="Loading patients" role="status">
-      {[0, 1, 2, 3].map((index) => <span key={index} />)}
+    <div className="ios-skeleton" aria-label="Loading patients" role="status">
+      {[0, 1, 2, 3].map((index) => (
+        <span key={index}><i /><b /></span>
+      ))}
     </div>
   );
 }
@@ -168,9 +243,9 @@ export function DeskLoading() {
 export function DeskError() {
   const { error, refresh, refreshing } = useDoctorDesk();
   return (
-    <div className="desk-error" role="alert">
+    <div className="ios-notice" role="alert">
       <p>{error}</p>
-      <button className="desk-button" disabled={refreshing} type="button" onClick={refresh}>
+      <button className="ios-button is-tinted" disabled={refreshing} type="button" onClick={refresh}>
         <RefreshCw aria-hidden="true" size={16} /> Try again
       </button>
     </div>
@@ -180,21 +255,12 @@ export function DeskError() {
 // Signed in, but no nurse-desk doctor matches this login yet.
 export function NotLinked({ doctor }) {
   return (
-    <div className="desk-empty">
+    <div className="ios-notice">
       <h2>No patients linked yet</h2>
       <p>
         {doctor?.hospitalName ? `${doctor.name} is not on the nurse desk at ${doctor.hospitalName} yet.` : 'This login is not linked to a hospital yet.'}
         {' '}Ask the DrJiva admin to link your login to your nurse desk name.
       </p>
     </div>
-  );
-}
-
-export function RefreshButton() {
-  const { refresh, refreshing } = useDoctorDesk();
-  return (
-    <button className="desk-icon-button" disabled={refreshing} type="button" onClick={refresh} aria-label="Refresh">
-      <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : ''} size={18} />
-    </button>
   );
 }

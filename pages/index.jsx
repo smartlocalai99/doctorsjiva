@@ -1,8 +1,10 @@
+import { CalendarDays, CircleCheck, Clock, PhoneMissed } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
-import { DeskError, DeskLoading, DeskSection, EmptyRow, NotLinked, RefreshButton, VisitRow, shortDate } from '@/components/doctor/DeskParts';
+import { AppTip } from '@/components/doctor/AppTip';
+import { DeskError, DeskLoading, DeskSection, EmptyRow, NotLinked, PageHeader, VisitRow, shortDate } from '@/components/doctor/DeskParts';
 import { useDoctorDesk } from '@/contexts/DoctorDeskContext';
 import { addDays, formatDate } from '@/lib/nurse-schedule';
 
@@ -25,16 +27,11 @@ export default function TodayPage() {
 
   return (
     <>
-      <Head><title>Today · DRJIVA Doctors</title></Head>
+      <Head><title>Today · DrJiva Doctors</title></Head>
       <div className="desk-page">
-        <header className="desk-day">
-          <div>
-            <p className="desk-day-weekday">{today ? formatDate(today, { weekday: 'long' }) : 'Today'}</p>
-            <h1 className="desk-day-date">{today ? formatDate(today, { day: 'numeric', month: 'long' }) : ' '}</h1>
-            {lists && desk.doctor.linked ? <Summary lists={lists} /> : null}
-          </div>
-          <RefreshButton />
-        </header>
+        <PageHeader kicker={today ? formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' }) : ' '} title="Today" />
+
+        <AppTip />
 
         {error && !desk ? <DeskError /> : null}
         {!desk && !error ? <DeskLoading /> : null}
@@ -42,6 +39,13 @@ export default function TodayPage() {
 
         {lists && desk.doctor.linked ? (
           <>
+            <nav className="ios-tiles" aria-label="Today at a glance">
+              <Tile count={lists.waiting.length} href="#coming-section" icon={Clock} label="Coming" tone="orange" />
+              <Tile count={lists.seen.length} href="#seen-section" icon={CircleCheck} label="Seen" tone="green" />
+              <Tile count={lists.missed.length} href="#missed-section" icon={PhoneMissed} label="Didn’t come" tone="red" />
+              <Tile count={lists.tomorrow.length} href="#tomorrow-section" icon={CalendarDays} label="Tomorrow" tone="blue" />
+            </nav>
+
             <DeskSection count={lists.waiting.length} id="coming" title="Coming today" tone="today">
               {lists.waiting.length
                 ? lists.waiting.map((entry) => <VisitRow appointment={entry} key={entry.key} patient={patients.get(entry.patientId)} today={today} />)
@@ -75,7 +79,7 @@ export default function TodayPage() {
               </DeskSection>
             ) : null}
 
-            <DeskSection count={lists.tomorrow.length} id="tomorrow" link={<Link href="/calendar">Calendar</Link>} title="Tomorrow">
+            <DeskSection count={lists.tomorrow.length} id="tomorrow" link={<Link className="ios-section-link" href="/calendar">Calendar</Link>} title="Tomorrow">
               {lists.tomorrow.length
                 ? lists.tomorrow.map((entry) => <VisitRow appointment={entry} key={entry.key} patient={patients.get(entry.patientId)} today={today} />)
                 : <EmptyRow>No one is booked for tomorrow.</EmptyRow>}
@@ -87,18 +91,14 @@ export default function TodayPage() {
   );
 }
 
-// "2 seen, 3 still to come. 3 to call back."
-function Summary({ lists }) {
-  const seen = lists.seen.length;
-  const waiting = lists.waiting.length;
-  const missed = lists.missed.length;
-  const parts = [];
-  if (seen) parts.push(<span className="is-seen" key="seen">{seen} seen</span>);
-  if (waiting) parts.push(<span className="is-today" key="waiting">{waiting} still to come</span>);
+// Like the lists in Reminders: an icon, the count, what it counts.
+function Tile({ count, href, icon: Icon, label, tone }) {
+  const empty = !count;
   return (
-    <p className="desk-day-summary">
-      {parts.length ? <>{parts.reduce((all, part, index) => (index ? [...all, ', ', part] : [part]), [])}.</> : 'No patients booked today.'}
-      {missed ? <> <a className="is-missed" href="#missed">{missed} to call back.</a></> : null}
-    </p>
+    <a className={`ios-tile-card ${empty ? 'is-empty' : ''}`} href={empty ? undefined : href} aria-disabled={empty || undefined}>
+      <span className={`ios-icon is-round is-${tone}`} aria-hidden="true"><Icon size={18} strokeWidth={2.4} /></span>
+      <b>{count}</b>
+      <span>{label}</span>
+    </a>
   );
 }

@@ -1,5 +1,20 @@
+import { notifyPlanStarted, requestOrigin } from '@/lib/server/doctor-push';
 import { callCare, dateOrNull, nurseRoute, text, uuidOrNull } from '@/lib/server/nurse-api';
 import { forgetDirectory } from '@/lib/server/nurse-directory';
+
+// Tells the plan's doctor about a new pregnancy, cycle or baby.
+function notifyDoctor(request, nurse, body, view) {
+  const patientId = view?.patient?.id || uuidOrNull(body.patientId);
+  if (!patientId) return undefined;
+  return notifyPlanStarted({
+    action: body.action,
+    careDoctorId: uuidOrNull(body.careDoctorId),
+    hospitalId: nurse.hospitalId,
+    nurseName: nurse.name,
+    origin: requestOrigin(request),
+    patientId,
+  });
+}
 
 // Start / correct / close care plans.
 export default nurseRoute(['POST'], async (request, response, nurse) => {
@@ -16,6 +31,7 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
       p_care_doctor_id: uuidOrNull(body.careDoctorId),
       p_doctor_name: text(body.doctorName, 80),
     });
+    await notifyDoctor(request, nurse, body, view);
     return response.status(200).json(view);
   }
 
@@ -40,6 +56,7 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
       p_care_doctor_id: uuidOrNull(body.careDoctorId),
       p_doctor_name: text(body.doctorName, 80),
     });
+    await notifyDoctor(request, nurse, body, view);
     return response.status(200).json(view);
   }
 
@@ -66,6 +83,7 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
       p_doctor_name: text(body.doctorName, 80),
     });
     forgetDirectory(nurse.hospitalId);
+    await notifyDoctor(request, nurse, body, view);
     return response.status(200).json(view);
   }
 

@@ -1,3 +1,4 @@
+import { notifyVisitSaved, requestOrigin } from '@/lib/server/doctor-push';
 import { callCare, dateOrNull, nurseRoute, text, uuidOrNull } from '@/lib/server/nurse-api';
 
 const STATUSES = new Set(['done', 'not_needed', 'clear']);
@@ -62,9 +63,22 @@ export default nurseRoute(['POST'], async (request, response, nurse) => {
     p_plan_id: uuidOrNull(body.planId),
   });
 
+  // Her doctor gets "Seen by …" on the phone while the page refreshes.
+  const notified = notifyVisitSaved({
+    careDoctorId: uuidOrNull(body.careDoctorId),
+    hospitalId: nurse.hospitalId,
+    nextDate: dateOrNull(body.nextDate),
+    nurseName: nurse.name,
+    origin: requestOrigin(request),
+    patientId,
+    planId: uuidOrNull(body.planId),
+  });
+
   // Extra tests and dates change only when touched; then send them too.
   if (cleanExtras.length || visitDates.length || extraDates.length || cycleSteps.length) {
-    return response.status(200).json(await callCare('care_nurse_patient_v2', { p_nurse_id: nurse.id, p_patient_id: patientId }));
+    const [fresh] = await Promise.all([callCare('care_nurse_patient_v2', { p_nurse_id: nurse.id, p_patient_id: patientId }), notified]);
+    return response.status(200).json(fresh);
   }
+  await notified;
   return response.status(200).json(view);
 });

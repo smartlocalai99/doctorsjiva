@@ -1,4 +1,4 @@
-import { getDoctorSession } from '@/lib/server/doctor-session';
+import { getDoctorSession, renewDoctorSession } from '@/lib/server/doctor-session';
 
 export default function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -7,5 +7,7 @@ export default function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed.' });
   }
   const session = getDoctorSession(request);
-  return response.status(200).json(session);
+  if (!session) return response.status(200).json(null);
+  const { doctor, expiresAt } = renewDoctorSession(response, session);
+  return response.status(200).json({ doctor, expiresAt });
 }

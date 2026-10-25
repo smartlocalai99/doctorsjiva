@@ -177,7 +177,7 @@ textarea:focus-visible {
   }
 
   .app-login-field > div {
-    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 text-muted transition focus-within:border-brand;
+    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 text-muted transition;
   }
 
   .app-login-field b {
@@ -280,9 +280,16 @@ textarea:focus-visible {
     @apply min-h-dvh bg-canvas text-ink;
   }
 
-  .nurse-shell :is(button, a, select, input, textarea):focus-visible {
+  /* Keyboard ring on buttons and links only; fields show just the caret. */
+  .nurse-shell :is(button, a):focus-visible {
     outline: 3px solid rgb(46 126 188 / 45%);
     outline-offset: 2px;
+  }
+
+  .nurse-shell :is(input, select, textarea):focus,
+  .nurse-shell :is(input, select, textarea):focus-visible {
+    outline: none;
+    box-shadow: none;
   }
 
   .nurse-topbar {
@@ -373,7 +380,7 @@ textarea:focus-visible {
   }
 
   .nurse-input-wrap {
-    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 transition focus-within:border-brand;
+    @apply flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-white px-4 transition;
   }
 
   .nurse-input-wrap input,
@@ -395,7 +402,7 @@ textarea:focus-visible {
   }
 
   .nurse-textarea {
-    @apply w-full resize-y rounded-2xl border border-line bg-white p-4 text-base leading-6 text-ink placeholder:text-slate-400 focus:border-brand;
+    @apply w-full resize-y rounded-2xl border border-line bg-white p-4 text-base leading-6 text-ink placeholder:text-slate-400;
   }
 
   .nurse-big-button {

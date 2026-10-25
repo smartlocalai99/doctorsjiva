@@ -1,14 +1,14 @@
 {
-  "name": "DRJIVA Doctors",
-  "short_name": "DRJIVA Doctors",
-  "description": "Today's patients, their visits and who didn't come.",
+  "name": "DrJiva Doctors",
+  "short_name": "DrJiva",
+  "description": "Today's patients, what the nurse saved, and who didn't come.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F4F7F8",
-  "theme_color": "#2E7EBC",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
   "categories": [
     "medical",
     "health"
@@ -31,6 +31,38 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Calendar",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "url": "/patients",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

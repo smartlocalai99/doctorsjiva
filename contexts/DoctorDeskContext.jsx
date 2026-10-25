@@ -1,16 +1,23 @@
+import { useRouter } from 'next/router';
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { readStored, writeStored } from '@/lib/device-store';
 import { useAuth } from './AuthContext';
 
 const DoctorDeskContext = createContext(null);
 export const DESK_POLL_MS = 20 * 1000;
 
-// Today, Calendar and Patients share one read of /api/doctor/desk. While
-// the app is on screen it is read again every 20 seconds, and straight
-// away when she comes back to it, so a visit the nurse just saved shows up
-// without a manual refresh. The refresh button skips the server's copy.
+// Today, Calendar and Patients share one read of /api/doctor/desk. The last
+// read is kept on the phone, so the app opens onto her patients at once and
+// then brings them up to date. While the app is on screen it is read again
+// every 20 seconds, straight away when she comes back to it, and when a
+// notification says the nurse saved something. The refresh button (and
+// pull to refresh) skips the server's copy.
 export function DoctorDeskProvider({ children }) {
+  const router = useRouter();
   const { session, signOut } = useAuth();
+  const phone = session?.doctor?.phone_number || '';
+  const storeKey = phone ? `drjiva.desk.${phone}` : '';
   const [desk, setDesk] = useState(null);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -32,6 +39,7 @@ export function DoctorDeskProvider({ children }) {
       setDesk(result);
       setError('');
       loadedAt.current = Date.now();
+      if (storeKey) writeStored(storeKey, result);
     } catch (loadError) {
       // A failed background read keeps what is on screen.
       if (!quiet) setError(loadError.message || 'Could not load your patients. Check the internet and try again.');
@@ -39,12 +47,17 @@ export function DoctorDeskProvider({ children }) {
       loading.current = false;
       if (!quiet) setRefreshing(false);
     }
-  }, [session, signOut]);
+  }, [session, signOut, storeKey]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => {
+      const stored = storeKey ? readStored(storeKey) : null;
+      if (stored?.appointments) setDesk(stored);
+      // With her last desk on screen, the first read is a quiet one.
+      void load({ quiet: Boolean(stored?.appointments) });
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, storeKey]);
 
   useEffect(() => {
     const visible = () => document.visibilityState === 'visible';
@@ -54,14 +67,20 @@ export function DoctorDeskProvider({ children }) {
     const onReturn = () => {
       if (visible() && Date.now() - loadedAt.current > 5000) void load({ quiet: true });
     };
+    const onMessage = (event) => {
+      if (event.data?.type === 'desk-changed') void load({ fresh: true, quiet: true });
+      if (event.data?.type === 'open' && typeof event.data.url === 'string' && event.data.url.startsWith('/')) void router.push(event.data.url);
+    };
     document.addEventListener('visibilitychange', onReturn);
     window.addEventListener('focus', onReturn);
+    navigator.serviceWorker?.addEventListener('message', onMessage);
     return () => {
       window.clearInterval(poll);
       document.removeEventListener('visibilitychange', onReturn);
       window.removeEventListener('focus', onReturn);
+      navigator.serviceWorker?.removeEventListener('message', onMessage);
     };
-  }, [load]);
+  }, [load, router]);
 
   const value = useMemo(() => {
     const patients = new Map((desk?.patients || []).map((patient) => [patient.id, patient]));

@@ -1,18 +1,20 @@
-import { Search, X } from 'lucide-react';
+import { ChevronRight, Search, X } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-import { CareMark, DeskError, DeskLoading, EmptyRow, NotLinked, RefreshButton, careText, dayDate, shortDate } from '@/components/doctor/DeskParts';
+import { CareMark, DeskError, DeskLoading, EmptyRow, NotLinked, PageHeader, careText, dayDate, shortDate } from '@/components/doctor/DeskParts';
 import { useDoctorDesk } from '@/contexts/DoctorDeskContext';
 import { searchPatients, toPatients } from '@/lib/nurse-directory';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'pregnant', label: 'Pregnant' },
-  { id: 'cycle', label: 'IUI cycle' },
+  { id: 'cycle', label: 'IUI' },
   { id: 'missed', label: 'Didn’t come' },
 ];
+
+const LIST_TITLE = { all: 'All patients', cycle: 'OI-TI / IUI cycle', missed: 'Didn’t come', pregnant: 'Pregnant' };
 
 const matches = {
   all: () => true,
@@ -42,15 +44,12 @@ export default function PatientsPage() {
 
   return (
     <>
-      <Head><title>Patients · DRJIVA Doctors</title></Head>
+      <Head><title>Patients · DrJiva Doctors</title></Head>
       <div className="desk-page">
-        <header className="desk-page-head">
-          <div>
-            <h1 className="desk-page-title">Patients</h1>
-            {desk?.doctor.linked ? <p className="desk-page-lead">{everyone.length} under your care at {desk.doctor.hospitalName}</p> : null}
-          </div>
-          <RefreshButton />
-        </header>
+        <PageHeader
+          lead={desk?.doctor.linked ? <p>{everyone.length} under your care at {desk.doctor.hospitalName}</p> : null}
+          title="Patients"
+        />
 
         {error && !desk ? <DeskError /> : null}
         {!desk && !error ? <DeskLoading /> : null}
@@ -58,37 +57,43 @@ export default function PatientsPage() {
 
         {desk?.doctor.linked ? (
           <>
-            <div className="desk-find">
-              <div className="desk-search">
-                <Search aria-hidden="true" size={18} />
+            <div className="ios-find">
+              <label className="ios-search">
+                <Search aria-hidden="true" size={17} strokeWidth={2.4} />
                 <input
                   aria-label="Search by name, mobile or hospital ID"
                   autoComplete="off"
-                  placeholder="Search name, mobile or hospital ID"
+                  enterKeyHint="search"
+                  placeholder="Name, mobile or hospital ID"
                   spellCheck={false}
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
                 {query ? (
-                  <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X aria-hidden="true" size={18} /></button>
+                  <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X aria-hidden="true" size={12} strokeWidth={3} /></button>
                 ) : null}
-              </div>
-              <div className="desk-filters" role="group" aria-label="Show">
+              </label>
+              <div className="ios-segmented" role="group" aria-label="Show">
                 {FILTERS.map((entry) => (
-                  <button aria-pressed={filter === entry.id} className={entry.id === 'missed' ? 'is-missed' : ''} key={entry.id} type="button" onClick={() => setFilter(entry.id)}>
+                  <button aria-pressed={filter === entry.id} key={entry.id} type="button" onClick={() => setFilter(entry.id)}>
                     {entry.label}
-                    <span>{everyone.filter(matches[entry.id]).length}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <ul className="desk-list">
-              {shown.length
-                ? shown.map((patient) => <PatientLine key={patient.id} patient={patient} today={desk.today} />)
-                : <EmptyRow>{query ? 'No patient matches that search. Try the last 4 digits of her mobile.' : 'No patients in this list.'}</EmptyRow>}
-            </ul>
+            <section className="ios-section" aria-labelledby="patient-list">
+              <div className="ios-section-head">
+                <h2 id="patient-list">{query.trim().length >= 2 ? 'Results' : LIST_TITLE[filter]}</h2>
+                <span className="ios-section-count">{shown.length}</span>
+              </div>
+              <ul className="ios-group">
+                {shown.length
+                  ? shown.map((patient) => <PatientLine key={patient.id} patient={patient} today={desk.today} />)
+                  : <EmptyRow>{query ? 'No patient matches that search. Try the last 4 digits of her mobile.' : 'No patients in this list.'}</EmptyRow>}
+              </ul>
+            </section>
           </>
         ) : null}
       </div>
@@ -110,16 +115,18 @@ function PatientLine({ patient, today }) {
   else if (patient.next?.date === today) when = { text: 'Coming today', tone: 'today' };
   else if (patient.next) when = { text: `Next visit ${dayDate(patient.next.date)}`, tone: 'next' };
   return (
-    <li className={`desk-row ${patient.missed && !patient.next ? 'is-missed' : ''}`}>
-      <Link className="desk-row-link" href={`/patients/${patient.id}`}>
+    <li className="ios-cell">
+      <Link className="ios-cell-link" href={`/patients/${patient.id}`}>
         <CareMark patient={patient} today={today} />
-        <span className="desk-row-body">
-          <span className="desk-row-top">
-            <strong className="desk-row-name">{patient.name}</strong>
+        <span className="ios-cell-body">
+          <strong className="ios-cell-title">{patient.name}</strong>
+          <span className="ios-cell-sub">
+            <span>{careText(patient)}</span>
+            {patient.hospitalPatientId ? <span className="is-id">{patient.hospitalPatientId}</span> : null}
           </span>
-          <span className="desk-row-meta">{[patient.hospitalPatientId, careText(patient)].filter(Boolean).join(' · ')}</span>
-          <span className={`desk-when is-${when.tone}`}>{when.text}</span>
+          <span className={`ios-when is-${when.tone}`}>{when.text}</span>
         </span>
+        <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
       </Link>
     </li>
   );
