@@ -2,7 +2,7 @@
 
 An installable Next.js PWA with two desks on the shared DRJIVA backend:
 
-- **Doctor desk** (`/`, `/calendar`, `/patients`): a doctor logs in with mobile number + 4-digit PIN and sees what the nurses recorded for her patients: who is coming today, what to have ready (pregnancy week, scans, vaccines, tests, OI-TI / IUI steps), who the nurse has seen, and who didn't come. Read-only. Drawn to the iOS design guidelines (system font, grouped lists, light and dark), installable to the Home Screen, and stays signed in for a year (renewed each time it opens).
+- **Doctor desk** (`/`, `/calendar`, `/patients`): a doctor logs in with mobile number + 4-digit PIN and sees what the nurses recorded for her patients: who is coming today, what to have ready (pregnancy week, scans, vaccines, tests, OI-TI / IUI steps), who the nurse has seen, and who didn't come. Read-only. Drawn to the iOS design guidelines (system font, grouped lists, white theme only), installable to the Home Screen, and stays signed in for a year (renewed each time it opens).
 - **Nurse desk** (`/nurse`): nurses save visits, ticks and next visit dates. A saved visit is what marks a patient as "came" on the doctor desk.
 
 A doctor login (`doctors` table) is linked to her nurse-desk name (`care_doctors` + aliases) at her hospital (`doctors.hospital_id`). If no name matches, the desk says so instead of showing patients.
