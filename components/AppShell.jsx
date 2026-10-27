@@ -122,7 +122,7 @@ function AppShell({ children }) {
   const { desk, refresh, refreshing } = useDoctorDesk();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const indicatorRef = useRef(null);
-  const push = usePushNotifications();
+  const push = usePushNotifications(session?.doctor?.phone_number || '');
   const install = useInstallPrompt();
   const name = desk?.doctor?.name || session?.doctor?.display_name || 'Doctor';
   const hospital = desk?.doctor?.hospitalName || session?.doctor?.hospital_name || '';

@@ -17,7 +17,7 @@ export default doctorRoute(async (request, response, doctor) => {
   const saved = await saveSubscription(doctor.phone_number, subscription, request.headers['user-agent']);
   if (!saved) return response.status(400).json({ error: 'This phone did not allow notifications. Try again.' });
   if (request.body?.welcome !== true) return response.status(200).json({ ok: true });
-  await sendToSubscriptions([{ auth: subscription.keys.auth, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh }], {
+  await sendToSubscriptions([{ auth: subscription.keys.auth, doctor_phone: doctor.phone_number, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh }], {
     body: 'You will hear when the nurse sees your patients, and get the day’s list at 8 AM.',
     tag: 'welcome',
     title: 'Notifications are on',

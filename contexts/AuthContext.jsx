@@ -1,9 +1,23 @@
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 
 import { clearStored, readStored, writeStored } from '@/lib/device-store';
+import { stopNotificationsOnThisPhone } from '@/lib/push-client';
 
 const AuthContext = createContext(null);
 const SESSION_KEY = 'drjiva.doctor.session';
+
+// Ends the login on the server and stops this phone's notifications: the
+// endpoint tells the server which phone to forget, even when the login
+// had already run out.
+async function logOutThisPhone({ onlyIfSubscribed = false } = {}) {
+  const endpoint = await stopNotificationsOnThisPhone();
+  if (onlyIfSubscribed && !endpoint) return;
+  await fetch('/api/auth/logout', {
+    body: JSON.stringify({ endpoint }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  }).catch(() => undefined);
+}
 
 // The signed-in doctor is remembered on the phone, so the app opens at once
 // (and with no signal) instead of waiting for the server. The server's
@@ -30,7 +44,11 @@ export function AuthProvider({ children }) {
         if (!active) return;
         setSession(nextSession);
         writeStored(SESSION_KEY, nextSession);
-        if (!nextSession) clearStored('drjiva.desk.');
+        if (!nextSession) {
+          clearStored('drjiva.desk.');
+          // Not signed in here any more: no notifications on this phone.
+          void logOutThisPhone({ onlyIfSubscribed: true });
+        }
       })
       // No signal: keep the remembered doctor.
       .catch(() => undefined)
@@ -61,7 +79,7 @@ export function AuthProvider({ children }) {
         return nextSession;
       },
       async signOut() {
-        await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+        await logOutThisPhone();
         writeStored(SESSION_KEY, null);
         clearStored('drjiva.desk.');
         setSession(null);
