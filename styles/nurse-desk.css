@@ -1,0 +1,1189 @@
+/* ===================================================================
+   Nurse desk (/nurse), on the same iOS system as the doctor app (see
+   doctor-desk.css for the tokens and the shared ios-* pieces).
+   The nurse works fast on a phone between patients, so the patient page
+   reads as a work list, top to bottom: Missed, Due now, Next visit, then
+   Later and Done folded away. Every tap target is at least 44px.
+   Unlayered, like doctor-desk.css.
+   =================================================================== */
+
+.nurse-shell.has-footer .desk-main {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.ios-tabbar.is-two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Newer deploy waiting (unsaved changes on screen) */
+.nurse-update-bar {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+  background: #fff4e0;
+  color: #8a4b00;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+@media (min-width: 1024px) {
+  .nurse-update-bar {
+    margin-left: 268px;
+  }
+}
+
+.nurse-update-bar button {
+  display: inline-flex;
+  min-height: 34px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ios-orange);
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* A value on the right of a cell ("Dr. Mounika", "Change ›") */
+.nurse-cell-value {
+  display: inline-flex;
+  overflow: hidden;
+  max-width: 52vw;
+  align-items: center;
+  gap: 2px;
+  color: var(--ios-label-2);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-cell-value.is-tint {
+  color: var(--ios-tint);
+}
+
+.nurse-cell-value.is-warning {
+  color: var(--ios-orange-text);
+  font-weight: 600;
+}
+
+.ios-cell-link.is-setting.has-value {
+  grid-template-columns: 29px minmax(0, 1fr) auto auto;
+}
+
+.nurse-shell .ios-cell-link.is-setting .ios-cell-title {
+  white-space: normal;
+}
+
+button.ios-cell-link:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.nurse-check-mark {
+  color: var(--ios-tint);
+}
+
+.nurse-choice-list .ios-cell-link {
+  min-height: 64px;
+}
+
+/* ---------- Today ---------- */
+.nurse-find {
+  display: grid;
+  gap: 12px;
+  margin-top: -8px;
+}
+
+.nurse-find > .ios-search {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.nurse-find .ios-button.is-tinted {
+  justify-self: start;
+}
+
+.nurse-new {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.nurse-new-tile {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 12px 12px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+  color: var(--ios-label) !important;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s;
+}
+
+.nurse-new-tile:active {
+  transform: scale(0.97);
+}
+
+.nurse-new-tile .ios-icon {
+  margin-bottom: 8px;
+}
+
+.nurse-new-tile strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.nurse-new-tile > span:last-child {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+/* Patient rows: monogram, name, mobile, last seen */
+.nurse-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  margin: 2px;
+  border-radius: 999px;
+  background: var(--ios-monogram);
+  color: #fff;
+  font-family: var(--ios-rounded);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.nurse-row {
+  align-items: center;
+}
+
+.nurse-row-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ios-group > li > .nurse-row[aria-selected='true'] {
+  background: var(--ios-tint-soft);
+}
+
+.nurse-row-skeleton .nurse-avatar,
+.nurse-row-skeleton i {
+  background: var(--ios-fill);
+  animation: ios-pulse 1.4s ease-in-out infinite;
+}
+
+.nurse-row-skeleton i {
+  display: block;
+  width: 45%;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.nurse-row-skeleton i + i {
+  width: 65%;
+  margin-top: 6px;
+}
+
+/* Swipe a patient row left to show "Remove" */
+.nurse-swipe {
+  position: relative;
+  overflow: hidden;
+}
+
+.nurse-swipe-row {
+  position: relative;
+  background: var(--ios-bg-2);
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.nurse-swipe-remove {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  width: 96px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  background: var(--ios-red);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Patient page ---------- */
+.ios-contact-actions button {
+  display: grid;
+  height: 60px;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+  color: var(--ios-tint) !important;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.ios-contact-actions button:active {
+  background: var(--ios-highlight);
+}
+
+/* "Saved" after Save visit */
+.nurse-saved {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ios-green) 14%, var(--ios-bg-2));
+  color: var(--ios-green-text);
+  outline: none;
+}
+
+.nurse-saved p {
+  color: #1d6b31;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.016em;
+  line-height: 1.4;
+}
+
+.nurse-saved-next {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 6px;
+  background: var(--ios-green) !important;
+  color: #fff !important;
+}
+
+/* Plan cards */
+.nurse-plan {
+  display: grid;
+  gap: 4px;
+}
+
+.nurse-plan.is-pregnancy .ios-card-head h2 {
+  color: var(--ios-pink);
+}
+
+.nurse-plan.is-child .ios-card-head h2 {
+  color: var(--ios-teal);
+}
+
+.nurse-plan.is-cycle .ios-card-head h2 {
+  color: var(--ios-purple);
+}
+
+.ios-card-lead.is-strong {
+  color: var(--ios-label);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.nurse-progress {
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ios-fill);
+}
+
+.nurse-progress i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff8fa5, var(--ios-pink));
+}
+
+.nurse-plan.is-cycle .nurse-progress i {
+  background: linear-gradient(90deg, #d79cf2, var(--ios-purple));
+}
+
+.nurse-every-visit {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ios-bg-3);
+  color: var(--ios-label);
+  font-size: 15px;
+  letter-spacing: -0.016em;
+  line-height: 1.35;
+}
+
+.nurse-every-visit svg {
+  margin-top: 2px;
+  color: var(--ios-tint);
+}
+
+.nurse-plan-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.nurse-plan-actions .ios-button {
+  min-height: 40px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  line-height: 1.2;
+}
+
+/* The work list */
+.nurse-work {
+  display: grid;
+  gap: 26px;
+}
+
+.nurse-work-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.nurse-work-group.is-missed .ios-section-head h2,
+.nurse-work-group.is-missed .ios-section-count {
+  color: var(--ios-red-text);
+}
+
+.nurse-work-group.is-now .ios-section-head h2 {
+  color: var(--ios-orange-text);
+}
+
+.nurse-work-group.is-next .ios-section-head h2 {
+  color: var(--ios-tint);
+}
+
+.nurse-card {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+}
+
+.nurse-card.is-next {
+  box-shadow: 0 0 0 2px var(--ios-tint), 0 8px 24px rgb(46 126 188 / 14%);
+}
+
+.nurse-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nurse-pill {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.nurse-card.is-next .nurse-pill {
+  background: var(--ios-tint);
+  color: #fff;
+}
+
+.nurse-card.is-due_now .nurse-pill {
+  background: color-mix(in srgb, var(--ios-orange) 16%, transparent);
+  color: var(--ios-orange-text);
+}
+
+.nurse-card.is-pending .nurse-pill {
+  background: color-mix(in srgb, var(--ios-red) 12%, transparent);
+  color: var(--ios-red-text);
+}
+
+.nurse-card.is-done .nurse-pill {
+  background: color-mix(in srgb, var(--ios-green) 16%, transparent);
+  color: var(--ios-green-text);
+}
+
+.nurse-card-tag {
+  overflow: hidden;
+  color: var(--ios-label-2);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.012em;
+  line-height: 1.25;
+}
+
+.nurse-card-sub {
+  color: var(--ios-label-2);
+  font-size: 15px;
+  letter-spacing: -0.016em;
+}
+
+.nurse-items {
+  display: grid;
+  margin-top: 8px;
+}
+
+.nurse-item {
+  display: grid;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 0.5px solid var(--ios-separator);
+}
+
+.nurse-item-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.nurse-item-copy strong {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1.3;
+}
+
+.nurse-item.is-done .nurse-item-copy strong,
+.nurse-item.is-not_needed .nurse-item-copy strong {
+  color: var(--ios-label-2);
+}
+
+.nurse-item.is-pending .nurse-item-copy strong {
+  color: var(--ios-red-text);
+}
+
+.nurse-item-copy em {
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.nurse-item-note {
+  color: var(--ios-orange-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nurse-staged {
+  color: var(--ios-orange-text);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.nurse-recorded {
+  color: var(--ios-green-text);
+}
+
+/* A vaccine the parent recorded in the DrJiva app; the nurse confirms. */
+.nurse-parent {
+  justify-self: start;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: #fff4e0;
+  color: #8a4b00;
+}
+
+.nurse-who {
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  color: var(--ios-label-2);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: 2px;
+}
+
+.nurse-who.is-husband {
+  background: #e3f0fd;
+  color: #135a9a;
+}
+
+.nurse-who.is-couple {
+  background: #f3e6fb;
+  color: #7a2fa3;
+}
+
+.nurse-done-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.nurse-done-date input {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ios-fill);
+  color: var(--ios-label);
+  font-size: 15px;
+}
+
+.nurse-item-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.nurse-choice {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ios-fill);
+  color: var(--ios-label) !important;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.nurse-choice:active {
+  opacity: 0.7;
+}
+
+.nurse-choice.is-done[aria-pressed='true'] {
+  background: var(--ios-green);
+  color: #fff !important;
+}
+
+.nurse-choice.is-skip[aria-pressed='true'] {
+  background: #636366;
+  color: #fff !important;
+}
+
+.nurse-card-remove {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  margin-top: 4px;
+  border: 0;
+  background: none;
+  color: var(--ios-red-text) !important;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* Date row at the bottom of a card */
+.nurse-date-block {
+  display: grid;
+  gap: 4px;
+}
+
+.nurse-date {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 0 4px 0 12px;
+  border-radius: 12px;
+  background: var(--ios-bg-3);
+  color: var(--ios-label);
+  cursor: pointer;
+}
+
+.nurse-date > svg:first-child {
+  color: var(--ios-tint);
+}
+
+.nurse-date-label {
+  font-size: 17px;
+}
+
+.nurse-date-value {
+  overflow: hidden;
+  color: var(--ios-tint);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-date.is-empty {
+  background: var(--ios-tint-soft);
+}
+
+.nurse-date.is-empty .nurse-date-value {
+  font-weight: 600;
+}
+
+.nurse-date.is-fixed {
+  grid-template-columns: 18px auto minmax(0, 1fr);
+  padding-right: 12px;
+  cursor: default;
+}
+
+.nurse-date.is-fixed > svg:first-child,
+.nurse-date.is-fixed .nurse-date-value {
+  color: var(--ios-label-2);
+}
+
+.nurse-date input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.nurse-date-hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 0 4px;
+  color: var(--ios-label-2);
+  font-size: 13px;
+}
+
+.nurse-quick {
+  margin-top: 8px;
+}
+
+.nurse-quick button {
+  min-height: 36px;
+  font-size: 15px;
+}
+
+/* Later / Done folded away */
+.nurse-fold {
+  display: grid;
+}
+
+.nurse-fold summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.nurse-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.nurse-fold-chevron {
+  margin-left: auto;
+  color: var(--ios-label-3);
+  transition: transform 0.2s;
+}
+
+.nurse-fold[open] .nurse-fold-chevron {
+  transform: rotate(180deg);
+}
+
+.nurse-fold[open] .nurse-work-cards {
+  margin-top: 12px;
+}
+
+/* Note for the patient */
+.nurse-note textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+  caret-color: var(--ios-tint);
+  color: var(--ios-label);
+  font-size: 17px;
+  letter-spacing: -0.022em;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.nurse-note textarea::placeholder {
+  color: var(--ios-label-3);
+}
+
+/* Save bar */
+.nurse-footer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  border-top: 0.5px solid var(--ios-separator);
+  background: var(--ios-material);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 1024px) {
+  .nurse-footer {
+    left: 268px;
+  }
+}
+
+.nurse-save-bar {
+  display: grid;
+  width: min(720px, calc(100% - 32px));
+  gap: 6px;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+
+.nurse-save-error {
+  color: var(--ios-red-text);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nurse-save-count {
+  margin-left: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 22%);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Sheets (forms that slide up) ---------- */
+.nurse-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 38%);
+  animation: ios-fade-in 0.3s ease;
+}
+
+.nurse-sheet {
+  display: grid;
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
+  align-content: start;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 6px 16px max(20px, env(safe-area-inset-bottom));
+  border-radius: 14px 14px 0 0;
+  background: var(--ios-bg);
+  color: var(--ios-label);
+  overscroll-behavior: contain;
+  animation: ios-sheet-in 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 640px) {
+  .nurse-sheet-backdrop {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .nurse-sheet {
+    border-radius: 16px;
+  }
+}
+
+.nurse-sheet-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-top: -8px;
+}
+
+.nurse-sheet-head .ios-text-button {
+  justify-self: start;
+  margin-left: -8px;
+}
+
+.nurse-sheet-head h2 {
+  max-width: 60vw;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-sheet-text {
+  padding: 0 4px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Fields: label above, white rounded field, no ring */
+.nurse-form {
+  display: grid;
+  gap: 18px;
+}
+
+.nurse-field {
+  display: grid;
+  gap: 6px;
+}
+
+.nurse-field > span {
+  padding-left: 16px;
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.006em;
+}
+
+.nurse-field em {
+  margin-left: 4px;
+  color: var(--ios-label-3);
+  font-style: normal;
+}
+
+.nurse-field small {
+  padding: 0 16px;
+  color: var(--ios-label-2);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.nurse-input-wrap {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+}
+
+.nurse-input-wrap input,
+.nurse-input-wrap select {
+  min-width: 0;
+  height: 50px;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  caret-color: var(--ios-tint);
+  color: var(--ios-label);
+  font-size: 17px;
+  letter-spacing: -0.022em;
+}
+
+.nurse-input-wrap input[type='date'] {
+  color: var(--ios-tint);
+  font-weight: 500;
+}
+
+.nurse-input-wrap input::placeholder {
+  color: var(--ios-label-3);
+}
+
+.nurse-select-wrap {
+  position: relative;
+}
+
+.nurse-select-wrap::after {
+  position: absolute;
+  right: 18px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ios-label-3);
+  border-bottom: 2px solid var(--ios-label-3);
+  content: '';
+  pointer-events: none;
+  transform: rotate(45deg) translateY(-3px);
+}
+
+.nurse-select-wrap select {
+  cursor: pointer;
+}
+
+.nurse-input-prefix {
+  padding-right: 10px;
+  border-right: 0.5px solid var(--ios-separator);
+  color: var(--ios-label-2);
+  font-size: 17px;
+}
+
+.nurse-segment {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--ios-fill);
+}
+
+.nurse-segment button {
+  min-height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ios-label) !important;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.016em;
+}
+
+.nurse-segment button:is([aria-selected='true'], [aria-checked='true']) {
+  background: var(--ios-bg-2);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 12%), 0 3px 1px rgb(0 0 0 / 4%);
+  font-weight: 600;
+}
+
+.nurse-segment button:disabled {
+  opacity: 0.4;
+}
+
+/* Choose one: a grouped list with a checkmark, like iOS settings */
+.nurse-option-list {
+  display: grid;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+}
+
+.nurse-option {
+  position: relative;
+  display: grid;
+  min-height: 56px;
+  gap: 1px;
+  padding: 10px 48px 10px 16px;
+  border: 0;
+  background: none;
+  color: var(--ios-label) !important;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nurse-option + .nurse-option {
+  box-shadow: inset 0 0.5px 0 var(--ios-separator);
+}
+
+.nurse-option:active {
+  background: var(--ios-highlight);
+}
+
+.nurse-option strong {
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.nurse-option span {
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.nurse-option[aria-checked='true']::after {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 7px;
+  height: 14px;
+  border-right: 2.5px solid var(--ios-tint);
+  border-bottom: 2.5px solid var(--ios-tint);
+  content: '';
+  transform: translateY(-65%) rotate(45deg);
+}
+
+/* What will be saved: weeks, due date, doctor */
+.nurse-preview {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--ios-tint-soft);
+  color: var(--ios-tint);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  line-height: 1.4;
+}
+
+.nurse-cycle-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.nurse-cycle-preview li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nurse-cycle-preview span {
+  color: var(--ios-label);
+  font-weight: 400;
+}
+
+/* Add tests: tap chips */
+.nurse-test-hint {
+  padding: 0 4px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.nurse-test-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.nurse-test-group legend {
+  margin-bottom: 8px;
+  padding-left: 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.nurse-test-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nurse-test-chip {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow), inset 0 0 0 0.5px var(--ios-separator);
+  color: var(--ios-label) !important;
+  cursor: pointer;
+  font-size: 15px;
+  letter-spacing: -0.016em;
+}
+
+.nurse-test-chip[aria-pressed='true'] {
+  background: var(--ios-tint);
+  box-shadow: none;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.nurse-test-other {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.nurse-test-other .ios-button {
+  min-height: 50px;
+}
+
+/* Stays at the bottom of the sheet while the chips scroll; covers the
+   sheet's own bottom padding so nothing shows through under the button. */
+.nurse-test-submit {
+  --sheet-pad-bottom: max(20px, env(safe-area-inset-bottom));
+  position: sticky;
+  bottom: calc(-1 * var(--sheet-pad-bottom));
+  margin: 0 -16px calc(-1 * var(--sheet-pad-bottom));
+  padding: 12px 16px var(--sheet-pad-bottom);
+  border-top: 0.5px solid var(--ios-separator);
+  background: var(--ios-material);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Remove patient */
+.nurse-remove-who {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+}
+
+.nurse-remove-who strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.nurse-remove-who span {
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.nurse-remove-points {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+  color: var(--ios-label);
+  font-size: 15px;
+  line-height: 1.45;
+  list-style: disc;
+}
+
+.nurse-remove-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

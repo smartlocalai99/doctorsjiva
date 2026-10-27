@@ -51,10 +51,10 @@ function RemovePatientSheet({ hospitalName, onClose, onRemoved, patient }) {
           <li>Their pregnancy, IUI or vaccine plan at {hospitalName} stops, and the next visit date is cleared in their DrJiva app.</li>
           <li>Medicines and other hospitals are not touched. Adding this mobile number again brings them back.</li>
         </ul>
-        {error ? <p className="error-banner" role="alert">{error}</p> : null}
+        {error ? <p className="ios-error" role="alert">{error}</p> : null}
         <div className="nurse-remove-actions">
-          <button className="secondary-button nurse-big-button" disabled={busy} type="button" onClick={onClose}>Cancel</button>
-          <button className="nurse-danger-button nurse-big-button" disabled={busy} type="button" onClick={() => void remove()}>
+          <button className="ios-button is-large" disabled={busy} type="button" onClick={onClose}>Cancel</button>
+          <button className="ios-button is-destructive is-large" disabled={busy} type="button" onClick={() => void remove()}>
             {busy ? 'Removing…' : 'Remove'}
           </button>
         </div>

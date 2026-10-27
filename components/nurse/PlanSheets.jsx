@@ -8,7 +8,7 @@ import { addDays, childAge, CYCLE_PREVIEW, daysBetween, formatDate, pregnancyTex
 export const UNNAMED_CHILD = 'Child';
 
 function SheetError({ message }) {
-  return message ? <p className="error-banner" role="alert">{message}</p> : null;
+  return message ? <p className="ios-error" role="alert">{message}</p> : null;
 }
 
 function useSubmit(onDone) {
@@ -82,7 +82,7 @@ export function StartPregnancySheet({ doctor, onClose, onDone, patient, today })
         ) : null}
         {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !date || motherName.trim().length < 2} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !date || motherName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start pregnancy'}
         </button>
       </form>
@@ -205,9 +205,9 @@ export function NewPregnancySheet({ doctors, onClose, onStarted, today }) {
         {date ? <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p> : null}
         <SheetError message={error} />
         {existingId ? (
-          <a className="nurse-link-button" href={`/nurse/patient/${existingId}`}>Open her page</a>
+          <a className="ios-button is-tinted" href={`/nurse/patient/${existingId}`}>Open her page</a>
         ) : null}
-        <button className="primary-button nurse-big-button" disabled={busy || !ready} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !ready} type="submit">
           {busy ? 'Starting…' : 'Start pregnancy'}
         </button>
       </form>
@@ -259,7 +259,7 @@ export function AddChildSheet({ doctor, onClose, onDone, patient, today }) {
         </div>
         {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !birthDate} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child schedule'}
         </button>
       </form>
@@ -291,7 +291,7 @@ export function ClosePlanSheet({ onClose, onDone, plan, today }) {
             </div>
           </div>
         ) : (
-          <p className="nurse-muted">The vaccine dates will stop showing in the patient&apos;s app.</p>
+          <p className="nurse-sheet-text">The vaccine dates will stop showing in the patient&apos;s app.</p>
         )}
         <label className="nurse-field">
           <span>Date</span>
@@ -300,7 +300,7 @@ export function ClosePlanSheet({ onClose, onDone, plan, today }) {
           </div>
         </label>
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !outcome || !date} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !outcome || !date} type="submit">
           {busy ? 'Saving…' : isPregnancy ? 'Save' : 'Stop vaccines'}
         </button>
       </form>
@@ -335,7 +335,7 @@ export function CorrectDueDateSheet({ onClose, onDone, plan, today }) {
         </label>
         {edd ? <p className="nurse-preview">{pregnancyText(week)} today · Expected delivery {formatDate(edd)}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !edd || motherName.trim().length < 2} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !edd || motherName.trim().length < 2} type="submit">
           {busy ? 'Saving…' : 'Save'}
         </button>
       </form>
@@ -370,7 +370,7 @@ export function HospitalIdSheet({ onClose, onDone, patient }) {
           <small>Next time you can search with this ID.</small>
         </label>
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save ID'}</button>
+        <button className="ios-button is-filled is-large" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save ID'}</button>
       </form>
     </NurseSheet>
   );
@@ -440,7 +440,7 @@ export function StartCycleSheet({ doctor, onClose, onDone, patient, today }) {
         <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
         {doctor?.name ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !anchor || personName.trim().length < 2} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || !anchor || personName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start cycle'}
         </button>
       </form>
@@ -489,7 +489,7 @@ export function NewCycleSheet({ doctor, onClose, onStarted, today }) {
         <CycleFields anchor={anchor} partnerName={partnerName} personName={personName} setAnchor={setAnchor} setPartnerName={setPartnerName} setPersonName={setPersonName} today={today} />
         {doctor ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || !anchor || personName.trim().length < 2} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || mobile.length !== 10 || !anchor || personName.trim().length < 2} type="submit">
           {busy ? 'Starting…' : 'Start cycle'}
         </button>
       </form>
@@ -518,7 +518,7 @@ export function ChangeDayOneSheet({ cycle, onClose, onDone, today }) {
         </label>
         <CyclePreview anchor={anchor} />
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !anchor} type="submit">{busy ? 'Saving…' : 'Save'}</button>
+        <button className="ios-button is-filled is-large" disabled={busy || !anchor} type="submit">{busy ? 'Saving…' : 'Save'}</button>
       </form>
     </NurseSheet>
   );
@@ -558,7 +558,7 @@ export function CloseCycleSheet({ cycle, onClose, onDone, today }) {
           </div>
         </label>
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || !outcome || !date} type="submit">{busy ? 'Saving…' : 'Finish cycle'}</button>
+        <button className="ios-button is-filled is-large" disabled={busy || !outcome || !date} type="submit">{busy ? 'Saving…' : 'Finish cycle'}</button>
       </form>
     </NurseSheet>
   );
@@ -628,7 +628,7 @@ export function NewChildSheet({ doctor, onClose, onStarted, today }) {
         </div>
         {doctor ? <p className="nurse-preview">Doctor: {doctor.name}</p> : null}
         <SheetError message={error} />
-        <button className="primary-button nurse-big-button" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !birthDate} type="submit">
+        <button className="ios-button is-filled is-large" disabled={busy || mobile.length !== 10 || parentName.trim().length < 2 || !birthDate} type="submit">
           {busy ? 'Adding…' : 'Add child'}
         </button>
       </form>

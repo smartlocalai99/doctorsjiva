@@ -1,15 +1,19 @@
 {
-  "name": "DRJIVA Nurse",
-  "short_name": "DRJIVA Nurse",
-  "description": "Patient follow-ups for hospital nurses.",
+  "name": "DrJiva Nurse",
+  "short_name": "DrJiva Nurse",
+  "description": "Today's patients, their tests and the next visit date.",
   "id": "/nurse",
   "start_url": "/nurse",
   "scope": "/nurse",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F4F7F8",
-  "theme_color": "#2E7EBC",
-  "categories": ["medical", "health", "productivity"],
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
+  "categories": [
+    "medical",
+    "health",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

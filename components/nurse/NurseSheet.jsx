@@ -1,13 +1,13 @@
-import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-// Bottom sheet on phones, centred dialog on bigger screens.
+// iOS sheet: slides up on phones (centred dialog on bigger screens), a
+// grabber, the title in the middle and Cancel on the left.
 export function NurseSheet({ children, onClose, title }) {
   const panelRef = useRef(null);
 
   useEffect(() => {
     const previous = document.activeElement;
-    panelRef.current?.querySelector('input, select, textarea, button:not([data-close])')?.focus();
+    panelRef.current?.querySelector('input:not([type="date"]), select, textarea, button:not([data-close])')?.focus({ preventScroll: true });
     const onKey = (event) => {
       if (event.key === 'Escape') onClose();
     };
@@ -30,11 +30,11 @@ export function NurseSheet({ children, onClose, title }) {
         ref={panelRef}
         role="dialog"
       >
+        <span className="ios-grabber" aria-hidden="true" />
         <div className="nurse-sheet-head">
+          <button className="ios-text-button" data-close type="button" onClick={onClose}>Cancel</button>
           <h2>{title}</h2>
-          <button className="nurse-icon-button" data-close type="button" onClick={onClose} aria-label="Close">
-            <X aria-hidden="true" size={20} />
-          </button>
+          <span />
         </div>
         {children}
       </section>

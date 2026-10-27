@@ -1,11 +1,10 @@
-import { CalendarDays, Check, Trash2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { CalendarDays, Check, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 
 import { addDays, addMonths, daysBetween, formatDate, itemState, parentRecordText, WHO_LABEL } from '@/lib/nurse-schedule';
 
 const SHORT = { day: 'numeric', month: 'short' };
 const LONG = { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' };
-const STATE_PILL = { done: 'Done', due_now: 'Now', next: 'Next visit', optional: 'If doctor says', pending: 'Missed', upcoming: 'Later' };
+const STATE_PILL = { done: 'Done', due_now: 'Due now', next: 'Next visit', optional: 'If doctor says', pending: 'Missed', upcoming: 'Later' };
 
 function windowText(card) {
   if (card.kind !== 'visit') return '';
@@ -13,28 +12,30 @@ function windowText(card) {
   if (plan.type === 'pregnancy') {
     const from = Math.round(daysBetween(plan.startDate, fromDate) / 7);
     const to = Math.round((daysBetween(plan.startDate, toDate) + 1) / 7) - 1;
-    return from === to ? `Week ${from}` : `Week ${from}–${to}`;
+    return from === to ? `Week ${from}` : `Weeks ${from}–${to}`;
   }
   return fromDate === toDate ? formatDate(fromDate, SHORT) : `${formatDate(fromDate, SHORT)} – ${formatDate(toDate, SHORT)}`;
 }
 
-// Opens the phone's date picker; the real input covers the whole pill.
-function DateControl({ hint, label, max, min, onChange, readOnly = false, staged, value }) {
+// A row with the date on the right, like an iOS date cell; the real date
+// input covers the row and opens the phone's date picker.
+function DateControl({ hint, label, max, min, onChange, readOnly = false, staged, title = 'Date', value }) {
   if (readOnly) {
     return value ? (
-      <div className="nurse-tl-date">
-        <span className="nurse-tl-date-pill nurse-tl-date-fixed">
-          <CalendarDays aria-hidden="true" size={18} />
-          <span>{formatDate(value, LONG)}</span>
-        </span>
+      <div className="nurse-date is-fixed">
+        <CalendarDays aria-hidden="true" size={18} strokeWidth={2.2} />
+        <span className="nurse-date-label">{title}</span>
+        <span className="nurse-date-value">{formatDate(value, LONG)}</span>
       </div>
     ) : null;
   }
   return (
-    <div className="nurse-tl-date">
-      <label className={`nurse-tl-date-pill${value ? '' : ' nurse-tl-date-empty'}`}>
-        <CalendarDays aria-hidden="true" size={18} />
-        <span>{value ? formatDate(value, LONG) : 'Set date'}</span>
+    <div className="nurse-date-block">
+      <label className={`nurse-date ${value ? '' : 'is-empty'}`}>
+        <CalendarDays aria-hidden="true" size={18} strokeWidth={2.2} />
+        <span className="nurse-date-label">{title}</span>
+        <span className="nurse-date-value">{value ? formatDate(value, LONG) : 'Set date'}</span>
+        <ChevronRight aria-hidden="true" className="ios-chevron" size={17} strokeWidth={2.4} />
         <input
           aria-label={label}
           max={max}
@@ -51,8 +52,12 @@ function DateControl({ hint, label, max, min, onChange, readOnly = false, staged
           }}
         />
       </label>
-      {hint ? <small>{hint}</small> : null}
-      {staged ? <em className="nurse-check-staged">Not saved yet</em> : null}
+      {hint || staged ? (
+        <p className="nurse-date-hint">
+          {hint}
+          {staged ? <em className="nurse-staged">Not saved yet</em> : null}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -60,28 +65,28 @@ function DateControl({ hint, label, max, min, onChange, readOnly = false, staged
 function ItemRow({ doneDate, item, label, note, onDoneDate, onToggle, parent, recorded, staged, state, today, who }) {
   const status = item.status;
   return (
-    <li className={`nurse-tl-item nurse-check-${state}`}>
-      <div className="nurse-tl-item-copy">
+    <li className={`nurse-item is-${state}`}>
+      <div className="nurse-item-copy">
         <strong>
           {label}
-          {who ? <span className={`nurse-who nurse-who-${who}`}>{WHO_LABEL[who]}</span> : null}
+          {who ? <span className={`nurse-who is-${who}`}>{WHO_LABEL[who]}</span> : null}
         </strong>
-        {note ? <span className="nurse-tl-note">{note}</span> : null}
-        {staged ? <em className="nurse-check-staged">Not saved yet</em> : recorded ? <em className="nurse-check-recorded">{recorded}</em> : null}
-        {parent && !staged && !item.status ? <em className="nurse-check-parent">{parent}</em> : null}
+        {note ? <span className="nurse-item-note">{note}</span> : null}
+        {staged ? <em className="nurse-staged">Not saved yet</em> : recorded ? <em className="nurse-recorded">{recorded}</em> : null}
+        {parent && !staged && !item.status ? <em className="nurse-parent">{parent}</em> : null}
         {status === 'done' && onDoneDate ? (
           <label className="nurse-done-date">
-            Done on
+            <span>Done on</span>
             <input aria-label={`Done on for ${label}`} type="date" max={today} value={doneDate || today}
               onChange={(event) => { if (event.target.value) onDoneDate(event.target.value); }} />
           </label>
         ) : null}
       </div>
-      <div className="nurse-tl-item-actions" role="group" aria-label={`Status of ${label}`}>
-        <button aria-pressed={status === 'done'} className="nurse-choice nurse-choice-done" type="button" onClick={() => onToggle(status === 'done' ? null : 'done')}>
+      <div className="nurse-item-actions" role="group" aria-label={`Status of ${label}`}>
+        <button aria-pressed={status === 'done'} className="nurse-choice is-done" type="button" onClick={() => onToggle(status === 'done' ? null : 'done')}>
           <Check aria-hidden="true" size={16} strokeWidth={3} /> Done
         </button>
-        <button aria-pressed={status === 'not_needed'} className="nurse-choice nurse-choice-skip" type="button" onClick={() => onToggle(status === 'not_needed' ? null : 'not_needed')}>
+        <button aria-pressed={status === 'not_needed'} className="nurse-choice is-skip" type="button" onClick={() => onToggle(status === 'not_needed' ? null : 'not_needed')}>
           Not needed
         </button>
       </div>
@@ -91,28 +96,29 @@ function ItemRow({ doneDate, item, label, note, onDoneDate, onToggle, parent, re
 
 function recordedText(status, doneOn, by) {
   if (!status) return '';
-  return `${status === 'done' ? `Done ${formatDate(doneOn, SHORT)}` : 'Not needed'}${by ? ` · ${by}` : ''}`;
+  return `${status === 'done' ? `Done ${formatDate(doneOn, SHORT)}` : 'Not needed'}${by ? `, by ${by}` : ''}`;
 }
 
-function TimelineCard({ card, changes, doneDates, isNext, multiPlan, onDoneDate, onRemoveExtra, onToggleCycle, onToggleExtra, onToggleItem, removing, today }) {
+function TimelineCard({ card, changes, children, doneDates, isNext, multiPlan, onDoneDate, onRemoveExtra, onToggleCycle, onToggleExtra, onToggleItem, removing, today }) {
   const state = isNext ? 'next' : card.state;
   const tag =
     card.kind === 'extra' ? 'From case sheet'
       : card.kind === 'cycle' ? 'OI-TI / IUI'
         : multiPlan || card.plan.type === 'child' ? card.plan.personName : 'Pregnancy';
+  const sub = card.kind === 'visit' ? windowText(card)
+    : card.kind === 'extra' ? `Added by ${card.item.addedBy}`
+      : `Cycle day ${card.day}`;
 
   return (
-    <article className={`nurse-tl-card nurse-tl-${state}`} aria-label={`${card.title}, ${STATE_PILL[state] || ''}`}>
-      <header className="nurse-tl-head">
-        <span className="nurse-tl-pill">{STATE_PILL[state]}</span>
-        <span className="nurse-tl-tag">{tag}</span>
+    <article className={`nurse-card is-${state}`} aria-label={`${card.title}, ${STATE_PILL[state] || ''}`}>
+      <header className="nurse-card-head">
+        <span className="nurse-pill">{STATE_PILL[state]}</span>
+        <span className="nurse-card-tag">{tag}</span>
       </header>
-      <h3 className="nurse-tl-title">{card.title}</h3>
-      {card.kind === 'visit' ? <p className="nurse-tl-sub">{windowText(card)}</p> : null}
-      {card.kind === 'extra' ? <p className="nurse-tl-sub">Added by {card.item.addedBy}</p> : null}
-      {card.kind === 'cycle' ? <p className="nurse-tl-sub">Cycle day {card.day}</p> : null}
+      <h3 className="nurse-card-title">{card.title}</h3>
+      <p className="nurse-card-sub">{sub}</p>
 
-      <ul className="nurse-tl-items">
+      <ul className="nurse-items">
         {card.kind === 'cycle'
           ? card.steps.map((step) => (
               <ItemRow
@@ -159,8 +165,10 @@ function TimelineCard({ card, changes, doneDates, isNext, multiPlan, onDoneDate,
           )}
       </ul>
 
+      {children}
+
       {card.kind === 'extra' && !card.item.status && !changes[`extra:${card.item.id}`] ? (
-        <button className="nurse-tl-remove" disabled={removing} type="button" onClick={() => onRemoveExtra(card.item)}>
+        <button className="nurse-card-remove" disabled={removing} type="button" onClick={() => onRemoveExtra(card.item)}>
           <Trash2 aria-hidden="true" size={15} /> Remove (added by mistake)
         </button>
       ) : null}
@@ -170,7 +178,7 @@ function TimelineCard({ card, changes, doneDates, isNext, multiPlan, onDoneDate,
 
 function QuickDates({ nextDate, onNextDate, today }) {
   return (
-    <div className="nurse-tl-quick" role="group" aria-label="Quick dates">
+    <div className="ios-segmented nurse-quick" role="group" aria-label="Quick dates">
       <button aria-pressed={nextDate === addDays(today, 7)} type="button" onClick={() => onNextDate(addDays(today, 7))}>+1 week</button>
       <button aria-pressed={nextDate === addDays(today, 14)} type="button" onClick={() => onNextDate(addDays(today, 14))}>+2 weeks</button>
       <button aria-pressed={nextDate === addMonths(today, 1)} type="button" onClick={() => onNextDate(addMonths(today, 1))}>+1 month</button>
@@ -181,16 +189,20 @@ function QuickDates({ nextDate, onNextDate, today }) {
 // For a patient with no schedule: just the next visit date.
 export function NextVisitCard({ nextDate, onNextDate, today }) {
   return (
-    <section className="nurse-card" aria-labelledby="next-heading">
-      <h2 className="nurse-card-title" id="next-heading">Next visit</h2>
-      <p className="nurse-muted">The patient sees this date in the DrJiva app and gets a reminder.</p>
-      <DateControl label="Next visit date" max={addDays(today, 400)} min={today} onChange={onNextDate} value={nextDate} />
-      <QuickDates nextDate={nextDate} onNextDate={onNextDate} today={today} />
+    <section className="ios-section" aria-labelledby="next-heading">
+      <div className="ios-section-head"><h2 id="next-heading">Next visit</h2></div>
+      <div className="nurse-card is-next">
+        <DateControl label="Next visit date" max={addDays(today, 400)} min={today} onChange={onNextDate} title="Next visit" value={nextDate} />
+        <QuickDates nextDate={nextDate} onNextDate={onNextDate} today={today} />
+      </div>
+      <p className="ios-section-foot">The patient sees this date in the DrJiva app and gets a reminder.</p>
     </section>
   );
 }
 
-// Visits, scans and tests side by side; the next visit sits in the middle.
+// The visit as a work list, top to bottom: what she missed, what is due
+// now, the next visit (its date is the one the patient is given), then
+// later visits and finished ones folded away.
 export function Timeline({
   cards,
   changes,
@@ -210,63 +222,108 @@ export function Timeline({
   removingId,
   today,
 }) {
-  const scrollRef = useRef(null);
-  const focusKey = nextKey || cards.find((card) => card.state !== 'done')?.key || cards[cards.length - 1]?.key;
-
-  useEffect(() => {
-    const strip = scrollRef.current;
-    const target = strip?.querySelector(`[data-card="${CSS.escape(focusKey || '')}"]`);
-    if (!strip || !target) return;
-    strip.scrollLeft = target.offsetLeft - (strip.clientWidth - target.clientWidth) / 2;
-  }, [focusKey]);
-
   if (!cards.length) return null;
 
+  const renderCard = (card) => {
+    const isNext = card.key === nextKey;
+    const value = isNext ? nextDate : card.date;
+    const staged = isNext
+      ? false
+      : card.kind === 'cycle'
+        ? card.steps.some((step) => `cycdate:${card.cycle.id}:${step.id}` in dates)
+        : card.key in dates;
+    // A finished visit, step or test keeps its date.
+    const saved =
+      card.kind === 'extra' ? card.item.status
+        : card.kind === 'cycle' ? card.steps.every((step) => step.savedStatus)
+          : card.visit.items.every((item) => item.status || item.conditional) && card.visit.items.some((item) => item.status);
+    return (
+      <TimelineCard
+        card={card}
+        changes={changes}
+        doneDates={doneDates}
+        isNext={isNext}
+        key={card.key}
+        multiPlan={multiPlan}
+        onDoneDate={onDoneDate}
+        onRemoveExtra={onRemoveExtra}
+        onToggleCycle={onToggleCycle}
+        onToggleExtra={onToggleExtra}
+        onToggleItem={onToggleItem}
+        removing={removingId === card.item?.id}
+        today={today}
+      >
+        <DateControl
+          hint={!value && card.kind === 'visit' ? `Due ${formatDate(card.fromDate, SHORT)} – ${formatDate(card.toDate, SHORT)}` : ''}
+          label={`Date for ${card.title}`}
+          max={addDays(today, card.kind === 'extra' ? 400 : card.kind === 'cycle' ? 120 : 2000)}
+          min={isNext ? today : addDays(today, -60)}
+          onChange={(date) => (isNext ? onNextDate(date) : card.kind === 'cycle' ? onCycleDate(card, date) : onDate(card.key, date))}
+          readOnly={!isNext && Boolean(saved)}
+          staged={staged}
+          title={isNext ? 'Next visit' : saved ? 'Date' : 'Visit date'}
+          value={value}
+        />
+        {isNext ? <QuickDates nextDate={nextDate} onNextDate={onNextDate} today={today} /> : null}
+      </TimelineCard>
+    );
+  };
+
+  const next = cards.find((card) => card.key === nextKey);
+  const rest = cards.filter((card) => card.key !== nextKey);
+  const missed = rest.filter((card) => card.state === 'pending');
+  const dueNow = rest.filter((card) => card.state === 'due_now');
+  const later = rest.filter((card) => card.state === 'upcoming' || card.state === 'optional');
+  const done = rest.filter((card) => card.state === 'done');
+
   return (
-    <div className="nurse-tl" ref={scrollRef}>
-      {cards.map((card) => {
-        const isNext = card.key === nextKey;
-        const value = isNext ? nextDate : card.date;
-        const staged = isNext
-          ? false
-          : card.kind === 'cycle'
-            ? card.steps.some((step) => `cycdate:${card.cycle.id}:${step.id}` in dates)
-            : card.key in dates;
-        // A finished visit, step or test keeps its date.
-        const saved =
-          card.kind === 'extra' ? card.item.status
-            : card.kind === 'cycle' ? card.steps.every((step) => step.savedStatus)
-              : card.visit.items.every((item) => item.status || item.conditional) && card.visit.items.some((item) => item.status);
-        return (
-          <div className="nurse-tl-col" data-card={card.key} key={card.key}>
-            <TimelineCard
-              card={card}
-              changes={changes}
-              doneDates={doneDates}
-              isNext={isNext}
-              multiPlan={multiPlan}
-              onRemoveExtra={onRemoveExtra}
-              onDoneDate={onDoneDate}
-              onToggleCycle={onToggleCycle}
-              onToggleExtra={onToggleExtra}
-              onToggleItem={onToggleItem}
-              removing={removingId === card.item?.id}
-              today={today}
-            />
-            <DateControl
-              hint={!value && card.kind === 'visit' ? `Due ${formatDate(card.fromDate, SHORT)} – ${formatDate(card.toDate, SHORT)}` : ''}
-              label={`Date for ${card.title}`}
-              max={addDays(today, card.kind === 'extra' ? 400 : card.kind === 'cycle' ? 120 : 2000)}
-              min={isNext ? today : addDays(today, -60)}
-              onChange={(date) => (isNext ? onNextDate(date) : card.kind === 'cycle' ? onCycleDate(card, date) : onDate(card.key, date))}
-              readOnly={!isNext && Boolean(saved)}
-              staged={staged}
-              value={value}
-            />
-            {isNext ? <QuickDates nextDate={nextDate} onNextDate={onNextDate} today={today} /> : null}
-          </div>
-        );
-      })}
+    <div className="nurse-work">
+      {missed.length ? (
+        <WorkGroup count={missed.length} id="work-missed" title="Missed" tone="missed" foot="Due earlier and not marked. Tick Done if she had it, Not needed if the doctor said so, or give a new date.">
+          {missed.map(renderCard)}
+        </WorkGroup>
+      ) : null}
+      {dueNow.length ? (
+        <WorkGroup count={dueNow.length} id="work-now" title="Due now" tone="now">{dueNow.map(renderCard)}</WorkGroup>
+      ) : null}
+      {next ? (
+        <WorkGroup id="work-next" title="Next visit" tone="next" foot="The date here is the one she sees in her DrJiva app, with a reminder.">
+          {renderCard(next)}
+        </WorkGroup>
+      ) : null}
+      {later.length ? (
+        <details className="nurse-fold">
+          <summary>
+            <span>Later</span>
+            <span className="ios-section-count">{later.length}</span>
+            <ChevronDown aria-hidden="true" className="nurse-fold-chevron" size={20} strokeWidth={2.4} />
+          </summary>
+          <div className="nurse-work-cards">{later.map(renderCard)}</div>
+        </details>
+      ) : null}
+      {done.length ? (
+        <details className="nurse-fold">
+          <summary>
+            <span>Done</span>
+            <span className="ios-section-count">{done.length}</span>
+            <ChevronDown aria-hidden="true" className="nurse-fold-chevron" size={20} strokeWidth={2.4} />
+          </summary>
+          <div className="nurse-work-cards">{done.map(renderCard)}</div>
+        </details>
+      ) : null}
     </div>
+  );
+}
+
+function WorkGroup({ children, count, foot, id, title, tone }) {
+  return (
+    <section className={`ios-section nurse-work-group is-${tone}`} aria-labelledby={id}>
+      <div className="ios-section-head">
+        <h2 id={id}>{title}</h2>
+        {typeof count === 'number' ? <span className="ios-section-count">{count}</span> : null}
+      </div>
+      <div className="nurse-work-cards">{children}</div>
+      {foot ? <p className="ios-section-foot">{foot}</p> : null}
+    </section>
   );
 }

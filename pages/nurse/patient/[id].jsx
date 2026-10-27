@@ -1,9 +1,10 @@
-import { Baby, CheckCircle2, ClipboardPlus, HeartPulse, Search, Sprout } from 'lucide-react';
+import { Baby, CheckCircle2, ChevronRight, FlaskConical, HeartPulse, Repeat } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { BackButton, PageHeader } from '@/components/doctor/DeskParts';
 import { AddExtraSheet } from '@/components/nurse/ExtraTests';
 import { NurseFrame, NurseLoading } from '@/components/nurse/NurseFrame';
 import { NurseLogin } from '@/components/nurse/NurseLogin';
@@ -17,7 +18,7 @@ import {
   StartCycleSheet,
   StartPregnancySheet,
 } from '@/components/nurse/PlanSheets';
-import { CycleSummary, DoctorSheet, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
+import { CycleSummary, DoctorRow, DoctorSheet, PatientAvatar, PatientHeader, PlanSummary } from '@/components/nurse/PatientTop';
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { planDoctor } from '@/lib/nurse-directory';
@@ -126,13 +127,16 @@ function PatientScreen() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
+  const back = <BackButton label="Today" onBack={() => (window.history.length > 1 ? router.back() : router.push('/nurse'))} />;
+
   if (loadError) {
     return (
-      <NurseFrame backHref="/nurse">
-        <section className="nurse-section">
-          <p className="error-banner" role="alert">{loadError}</p>
-          <Link className="primary-button nurse-big-button" href="/nurse"><Search aria-hidden="true" size={20} /> Back to search</Link>
-        </section>
+      <NurseFrame detail>
+        <PageHeader back={back} title="Patient" trailing={null} />
+        <div className="ios-notice" role="alert">
+          <p>{loadError}</p>
+          <Link className="ios-button is-tinted" href="/nurse">Back to Today</Link>
+        </div>
       </NurseFrame>
     );
   }
@@ -326,58 +330,48 @@ function PatientScreen() {
   const footer = (
     <div className="nurse-save-bar">
       {saveError ? <p className="nurse-save-error" role="alert">{saveError}</p> : null}
-      <button className="primary-button nurse-big-button" disabled={saving} type="button" onClick={() => void save()}>
-        {saving ? 'Saving…' : changeCount ? `Save visit · ${changeCount} ${changeCount === 1 ? 'change' : 'changes'}` : 'Save visit'}
+      <button className="ios-button is-filled is-large" disabled={saving} type="button" onClick={() => void save()}>
+        {saving ? <span className="ios-spinner is-light" aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" size={20} strokeWidth={2.4} />}
+        {saving ? 'Saving…' : 'Save visit'}
+        {changeCount && !saving ? <span className="nurse-save-count">{changeCount} {changeCount === 1 ? 'change' : 'changes'}</span> : null}
       </button>
     </div>
   );
+  const canStartPregnancy = (department === 'gynecology' || department === 'general') && !hasPregnancy;
+  const canStartCycle = department === 'gynecology' && !cycles.length && !hasPregnancy;
 
   return (
-    <NurseFrame backHref="/nurse" footer={footer}>
-      <Head><title>{`${patient.name || 'Patient'} · DRJIVA Nurse`}</title></Head>
+    <NurseFrame detail footer={footer}>
+      <Head><title>{`${patient.name || 'Patient'} · DrJiva Nurse`}</title></Head>
+
+      <PageHeader above={<PatientAvatar name={patient.name} />} back={back} title={patient.name || 'Patient'} trailing={null} />
+      <PatientHeader onEditId={() => setSheet({ type: 'hospitalId' })} patient={patient} />
 
       {notice ? (
-        <div className="success-banner nurse-saved" ref={savedRef} role="status" tabIndex={-1}>
-          <span><CheckCircle2 aria-hidden="true" size={18} /> {notice}</span>
-          <Link href="/nurse">Next patient</Link>
+        <div className="nurse-saved" ref={savedRef} role="status" tabIndex={-1}>
+          <CheckCircle2 aria-hidden="true" size={22} strokeWidth={2.4} />
+          <p>{notice}</p>
+          <Link className="ios-button is-small nurse-saved-next" href="/nurse">Next patient</Link>
         </div>
       ) : null}
 
-      <PatientHeader doctor={doctor} onEditDoctor={() => setSheet({ type: 'doctor' })} onEditId={() => setSheet({ type: 'hospitalId' })} patient={patient} />
-      {view.lastFollowup ? (
-        <p className="nurse-muted nurse-last-update">
-          Last updated {formatDate(view.lastFollowup.visitDate)} by {view.lastFollowup.nurseName}
-        </p>
-      ) : null}
+      <DoctorRow doctor={doctor} lastFollowup={view.lastFollowup} onEdit={() => setSheet({ type: 'doctor' })} />
 
       {/* What this doctor's desk can start for her. */}
-      {department === 'gynecology' && (!hasPregnancy || !cycles.length) ? (
-        <div className="nurse-start-row">
-          {!hasPregnancy ? (
-            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
-              <HeartPulse aria-hidden="true" size={20} /> Pregnancy confirmed
-            </button>
-          ) : null}
-          {!cycles.length && !hasPregnancy ? (
-            <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'cycle' })}>
-              <Sprout aria-hidden="true" size={20} /> Start OI-TI / IUI cycle
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      {department === 'pediatrics' ? (
-        <div className="nurse-start-row">
-          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'child' })}>
-            <Baby aria-hidden="true" size={20} /> Add child
-          </button>
-        </div>
-      ) : null}
-      {department === 'general' && !hasPregnancy ? (
-        <div className="nurse-start-row">
-          <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'pregnancy' })}>
-            <HeartPulse aria-hidden="true" size={20} /> Pregnancy confirmed
-          </button>
-        </div>
+      {canStartPregnancy || canStartCycle || department === 'pediatrics' ? (
+        <section className="ios-section" aria-label="Start a schedule">
+          <ul className="ios-group">
+            {canStartPregnancy ? (
+              <StartRow icon={HeartPulse} label="Pregnancy confirmed" onClick={() => setSheet({ type: 'pregnancy' })} tone="pink" />
+            ) : null}
+            {canStartCycle ? (
+              <StartRow icon={Repeat} label="Start OI-TI / IUI cycle" onClick={() => setSheet({ type: 'cycle' })} tone="purple" />
+            ) : null}
+            {department === 'pediatrics' ? (
+              <StartRow icon={Baby} label="Add child (vaccines)" onClick={() => setSheet({ type: 'child' })} tone="teal" />
+            ) : null}
+          </ul>
+        </section>
       ) : null}
 
       {shownCycles.map((cycle) => (
@@ -389,52 +383,48 @@ function PatientScreen() {
       ))}
 
       {cards.length ? (
-        <section className="nurse-section" aria-labelledby="timeline-heading">
-          <div className="nurse-list-head">
-            <h2 className="nurse-card-title" id="timeline-heading">Visits, scans and tests</h2>
-            <span className="nurse-muted">Swipe sideways</span>
-          </div>
-          <Timeline
-            cards={cards}
-            changes={changes}
-            dates={dates}
-            doneDates={doneDates}
-            multiPlan={shownPlans.length > 1}
-            nextDate={nextValue}
-            nextKey={nextKey}
-            onCycleDate={setCycleCardDate}
-            onDate={setCardDate}
-            onDoneDate={changeDoneDate}
-            onNextDate={changeNextDate}
-            onRemoveExtra={(item) => void removeExtra(item)}
-            onToggleCycle={toggleCycle}
-            onToggleExtra={toggleExtra}
-            onToggleItem={toggleItem}
-            removingId={removingId}
-            today={today}
-          />
-        </section>
+        <Timeline
+          cards={cards}
+          changes={changes}
+          dates={dates}
+          doneDates={doneDates}
+          multiPlan={shownPlans.length > 1}
+          nextDate={nextValue}
+          nextKey={nextKey}
+          onCycleDate={setCycleCardDate}
+          onDate={setCardDate}
+          onDoneDate={changeDoneDate}
+          onNextDate={changeNextDate}
+          onRemoveExtra={(item) => void removeExtra(item)}
+          onToggleCycle={toggleCycle}
+          onToggleExtra={toggleExtra}
+          onToggleItem={toggleItem}
+          removingId={removingId}
+          today={today}
+        />
       ) : null}
 
       {!nextCard ? <NextVisitCard nextDate={nextValue} onNextDate={changeNextDate} today={today} /> : null}
 
-      <button className="nurse-action-button" type="button" onClick={() => setSheet({ type: 'extra' })}>
-        <ClipboardPlus aria-hidden="true" size={20} /> Add tests or scans from the case sheet
-      </button>
+      <section className="ios-section" aria-label="Case sheet">
+        <ul className="ios-group">
+          <StartRow icon={FlaskConical} label="Add tests or scans from the case sheet" onClick={() => setSheet({ type: 'extra' })} tone="blue" />
+        </ul>
+      </section>
 
-      <section className="nurse-card" aria-labelledby="note-heading">
-        <label className="nurse-field">
-          <span id="note-heading">Note for the patient <em>optional</em></span>
+      <section className="ios-section" aria-labelledby="note-heading">
+        <div className="ios-section-head"><h2 id="note-heading">Note for the patient</h2></div>
+        <label className="nurse-note">
+          <span className="sr-only">Note for the patient, optional</span>
           <textarea
-            className="nurse-textarea"
             maxLength={300}
-            placeholder="e.g. Come fasting for sugar test"
+            placeholder="Optional, e.g. Come fasting for the sugar test"
             rows={3}
             value={note}
             onChange={(event) => setNote(event.target.value)}
           />
-          <small>{note.length}/300 · The patient sees this in the DrJiva app.</small>
         </label>
+        <p className="ios-section-foot">She sees this in the DrJiva app. {note.length}/300</p>
       </section>
 
       {sheet?.type === 'doctor' ? (
@@ -486,5 +476,18 @@ function PatientScreen() {
         <HospitalIdSheet onClose={() => setSheet(null)} onDone={onPlanChanged} patient={patient} />
       ) : null}
     </NurseFrame>
+  );
+}
+
+// A tappable row with a coloured icon, like a Settings cell.
+function StartRow({ icon: Icon, label, onClick, tone }) {
+  return (
+    <li className="ios-cell">
+      <button className="ios-cell-link is-setting" type="button" onClick={onClick}>
+        <span className={`ios-icon is-${tone}`} aria-hidden="true"><Icon size={17} strokeWidth={2.4} /></span>
+        <span className="ios-cell-body"><span className="ios-cell-title">{label}</span></span>
+        <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
+      </button>
+    </li>
   );
 }

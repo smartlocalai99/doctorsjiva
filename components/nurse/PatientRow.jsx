@@ -11,17 +11,17 @@ function RowContent({ patient, showDate }) {
   return (
     <>
       <span aria-hidden="true" className="nurse-avatar">{initials(patient.name)}</span>
-      <span className="nurse-patient-row-main">
-        <strong>{patient.name || 'Name not saved'}</strong>
-        <span>
-          +91 {formatMobile(patient.mobile)}
-          {patient.hospitalId ? ` · ID ${patient.hospitalId}` : ''}
+      <span className="ios-cell-body">
+        <strong className="ios-cell-title">{patient.name || 'Name not saved'}</strong>
+        <span className="ios-cell-sub">
+          <span>+91 {formatMobile(patient.mobile)}</span>
+          {patient.hospitalId ? <span className="is-id">{patient.hospitalId}</span> : null}
         </span>
       </span>
-      {showDate && patient.lastSeen ? (
-        <span className="nurse-patient-row-date">{formatDate(patient.lastSeen, { day: 'numeric', month: 'short' })}</span>
-      ) : null}
-      <ChevronRight aria-hidden="true" className="nurse-patient-row-chevron" size={18} />
+      <span className="nurse-row-end">
+        {showDate && patient.lastSeen ? <span>{formatDate(patient.lastSeen, { day: 'numeric', month: 'short' })}</span> : null}
+        <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
+      </span>
     </>
   );
 }
@@ -38,7 +38,7 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
     return (
       <Link
         aria-selected={option ? selected : undefined}
-        className="nurse-patient-row"
+        className="ios-cell-link nurse-row"
         href={`/nurse/patient/${patient.id}`}
         id={id}
         role={option ? 'option' : undefined}
@@ -93,12 +93,12 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
           onRemove(patient);
         }}
       >
-        <Trash2 aria-hidden="true" size={20} />
+        <Trash2 aria-hidden="true" size={20} strokeWidth={2.2} />
         <span>Remove</span>
       </button>
       ) : null}
       <Link
-        className="nurse-patient-row nurse-swipe-row"
+        className="ios-cell-link nurse-row nurse-swipe-row"
         draggable={false}
         href={`/nurse/patient/${patient.id}`}
         id={id}
@@ -128,9 +128,9 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
 
 export function PatientRowSkeleton() {
   return (
-    <div aria-hidden="true" className="nurse-patient-row nurse-patient-row-skeleton">
+    <div aria-hidden="true" className="ios-cell-link nurse-row nurse-row-skeleton">
       <span className="nurse-avatar" />
-      <span className="nurse-patient-row-main"><i /><i /></span>
+      <span className="ios-cell-body"><i /><i /></span>
     </div>
   );
 }

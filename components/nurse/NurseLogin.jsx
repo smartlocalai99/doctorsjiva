@@ -1,4 +1,4 @@
-import { ArrowRight, LockKeyhole } from 'lucide-react';
+import { LockKeyhole } from 'lucide-react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -11,6 +11,7 @@ function tenDigits(value) {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
+// Same look as the doctor login: mobile number, then the PIN as four dots.
 export function NurseLogin() {
   const { login } = useNurse();
   const [mobile, setMobile] = useState('');
@@ -38,32 +39,35 @@ export function NurseLogin() {
       setError(loginError.message);
       setPin('');
       setLoading(false);
+      navigator.vibrate?.([30, 40, 30]);
       pinRef.current?.focus();
     }
   };
 
   return (
     <>
-      <Head><title>Nurse login · DRJIVA</title></Head>
-      <main className="app-login-shell nurse-login" id="main-content">
-        <section className="app-login-content nurse-login-content" aria-labelledby="nurse-login-heading">
-          <Image alt="" className="nurse-login-mark" height={72} priority src="/icons/drjiva-mark.png" width={72} />
-          <div className="app-login-heading">
-            <h1 id="nurse-login-heading">Nurse login</h1>
-            <p>ఆరోగ్యమే మహాభాగ్యం</p>
-            <span>Update your patients&apos; next visit and checklist.</span>
-          </div>
+      <Head><title>Nurse login · DrJiva</title></Head>
+      <main className="doc-login" id="main-content">
+        <section className="doc-login-card" aria-labelledby="nurse-login-heading">
+          <span className="doc-login-icon">
+            <Image alt="DrJiva" height={60} priority src="/icons/drjiva-mark.png" width={60} />
+          </span>
+          <h1 id="nurse-login-heading">DrJiva Nurse</h1>
+          <p className="doc-login-lead">Today’s patients, their tests, and the next visit date.</p>
 
-          <form ref={formRef} className="app-login-form" onSubmit={submit}>
-            <label className="app-login-field">
-              <span>Mobile number</span>
-              <div>
-                <span className="india-flag" role="img" aria-label="India">🇮🇳</span>
+          <form ref={formRef} className="doc-login-form" onSubmit={submit}>
+            <label className="doc-login-group">
+              <span className="doc-login-label">Mobile number</span>
+              <span className="doc-login-phone">
+                <b aria-hidden="true">+91</b>
                 <input
                   aria-label="Mobile number"
-                  autoComplete="tel"
+                  autoComplete="tel-national"
+                  autoFocus
+                  enterKeyHint="next"
                   inputMode="numeric"
                   name="mobile"
+                  placeholder="10-digit mobile"
                   spellCheck={false}
                   value={mobile}
                   onChange={(event) => {
@@ -71,22 +75,20 @@ export function NurseLogin() {
                     setMobile(tenDigits(event.target.value));
                   }}
                 />
-              </div>
+              </span>
             </label>
-            <div className="app-login-field">
-              <span id="nurse-pin-label">4-digit PIN</span>
-              <div className="pin-input-wrap">
-                <LockKeyhole aria-hidden="true" size={18} />
-                <div className="pin-cells" aria-hidden="true">
-                  {Array.from({ length: 4 }, (_, index) => (
-                    <span className={index < pin.length ? 'filled' : ''} key={index}>{pin[index] ? '•' : ''}</span>
-                  ))}
-                </div>
+
+            <div className="doc-login-pin-block">
+              <span className="doc-login-label" id="nurse-pin-label">Enter your 4-digit PIN</span>
+              <div className={`doc-login-pin ${error ? 'is-wrong' : ''}`}>
+                {Array.from({ length: 4 }, (_, index) => (
+                  <span aria-hidden="true" className={index < pin.length ? 'is-filled' : ''} key={index} />
+                ))}
                 <input
                   ref={pinRef}
-                  aria-describedby="nurse-pin-label"
-                  aria-label="4-digit PIN"
+                  aria-labelledby="nurse-pin-label"
                   autoComplete="current-password"
+                  enterKeyHint="go"
                   inputMode="numeric"
                   maxLength={4}
                   name="pin"
@@ -99,14 +101,17 @@ export function NurseLogin() {
                   }}
                 />
               </div>
+              {error ? <p className="doc-login-error" role="alert">{error}</p> : null}
             </div>
-            {error ? <p className="error-banner" role="alert">{error}</p> : null}
-            <button className="primary-button app-login-button" type="submit" disabled={loading || mobile.length !== 10 || pin.length !== 4}>
-              {loading ? 'Logging in…' : 'Log in'} <ArrowRight aria-hidden="true" size={18} />
+
+            <button className="ios-button is-filled is-large" type="submit" disabled={loading || mobile.length !== 10 || pin.length !== 4}>
+              {loading ? <span className="ios-spinner is-light" aria-hidden="true" /> : null}
+              {loading ? 'Logging in…' : 'Log in'}
             </button>
           </form>
 
-          <p className="app-login-footer"><LockKeyhole aria-hidden="true" size={14} /> Forgot your PIN? Ask your DrJiva admin to reset it.</p>
+          <p className="doc-login-help"><LockKeyhole aria-hidden="true" size={14} /> Forgot your PIN? Ask your DrJiva admin to reset it.</p>
+          <p className="doc-login-telugu" lang="te">ఆరోగ్యమే మహాభాగ్యం</p>
         </section>
       </main>
     </>

@@ -118,7 +118,7 @@ export function AddExtraSheet({ nextDate, onClose, onDone, patientId, today }) {
                 }}
               />
             </div>
-            <button className="secondary-button" disabled={tidy(other).length < 2} type="button" onClick={addOther}>
+            <button className="ios-button is-tinted" disabled={tidy(other).length < 2} type="button" onClick={addOther}>
               <Plus aria-hidden="true" size={18} />
               Add
             </button>
@@ -148,9 +148,9 @@ export function AddExtraSheet({ nextDate, onClose, onDone, patientId, today }) {
             {when === 'today' ? `Saved as done today, ${formatDate(today)}` : `To do on ${formatDate(dueDate)}`}
           </p>
         ) : null}
-        {error ? <p className="error-banner" role="alert">{error}</p> : null}
+        {error ? <p className="ios-error" role="alert">{error}</p> : null}
         <div className="nurse-test-submit">
-          <button className="primary-button nurse-big-button" disabled={busy || !ready} type="submit">
+          <button className="ios-button is-filled is-large" disabled={busy || !ready} type="submit">
             {busy ? 'Adding…' : count === 0 ? 'Pick tests to add' : `Add ${count} ${count === 1 ? 'test' : 'tests'}`}
           </button>
         </div>
