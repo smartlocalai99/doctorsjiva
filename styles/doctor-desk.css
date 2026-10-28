@@ -230,10 +230,53 @@ html:has(.desk-shell) {
 .doc-login {
   display: grid;
   min-height: 100dvh;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
+  align-content: center;
+  row-gap: 28px;
   padding: calc(32px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
   background: var(--ios-bg);
   color: var(--ios-label);
+}
+
+/* Dr. Mounika and Dr. Sudarshan, many times over, above the form. */
+.doc-login-doctors {
+  display: grid;
+  /* Edge to edge on a phone (through the page's 16px sides). */
+  width: calc(100% + 32px);
+  max-width: 560px;
+  margin-inline: -16px;
+  gap: 10px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+}
+
+.doc-login-doctors-row {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  /* Each tile plus its gap, so moving by half lands on the seam exactly. */
+  padding-right: 10px;
+  animation: doc-doctors-slide 60s linear infinite;
+}
+
+.doc-login-doctors-row.is-reverse {
+  animation-direction: reverse;
+  animation-duration: 70s;
+}
+
+.doc-login-doctors-row img {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 8%);
+  object-fit: cover;
+}
+
+@keyframes doc-doctors-slide {
+  to { transform: translateX(-50%); }
 }
 
 .doc-login-card {
@@ -2349,5 +2392,10 @@ button.ios-cell-link:active {
   .ios-sheet::backdrop {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* An endless loop sped up would flicker: the doctors simply stay put. */
+  .doc-login-doctors-row {
+    animation: none !important;
   }
 }

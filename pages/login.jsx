@@ -12,6 +12,30 @@ function tenDigits(value) {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
+// Dhruva's doctors, over and over, in two rows sliding opposite ways.
+// The second row is the first reversed, so the same face never sits
+// right under itself.
+const DOCTOR_PHOTOS = ['mounika-desk', 'sudarshan-coat', 'mounika-dhruva', 'sudarshan-dhruva'];
+const DOCTOR_ROWS = [DOCTOR_PHOTOS, [...DOCTOR_PHOTOS].reverse()];
+
+function DoctorRows() {
+  return (
+    <div className="doc-login-doctors" role="img" aria-label="Dr. Mounika and Dr. Sudarshan, Dhruva Hospitals">
+      {DOCTOR_ROWS.map((row, rowIndex) => {
+        const strip = Array.from({ length: 4 }, () => row).flat();
+        return (
+          <div className={`doc-login-doctors-row ${rowIndex % 2 ? 'is-reverse' : ''}`} key={rowIndex}>
+            {/* Two copies, so the row loops without a seam. */}
+            {[...strip, ...strip].map((name, index) => (
+              <Image alt="" height={72} key={`${name}-${index}`} loading="eager" src={`/login-doctors/${name}.jpg`} width={72} />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
@@ -55,6 +79,7 @@ export default function LoginPage() {
     <>
       <Head><title>Doctor login · DrJiva</title></Head>
       <main className="doc-login" id="main-content">
+        <DoctorRows />
         <section className="doc-login-card" aria-labelledby="login-heading">
           <span className="doc-login-icon">
             <Image alt="DrJiva" height={60} priority src="/icons/drjiva-mark.png" width={60} />
