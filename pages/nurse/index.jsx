@@ -13,13 +13,14 @@ import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { useRemovePatient } from '@/components/nurse/RemovePatient';
 import { NewChildSheet, NewCycleSheet, NewPregnancySheet } from '@/components/nurse/PlanSheets';
 import { NurseVisitRow, sortToday, useNurseToday } from '@/components/nurse/TodayList';
-import { nurseRequest, useNurse } from '@/contexts/NurseContext';
+import { nurseRequest, useNurse, useNurseSchedule, withSchedule } from '@/contexts/NurseContext';
+import { byNextVisit } from '@/lib/doctor-desk';
 import { readStored, writeStored } from '@/lib/device-store';
 import { isPatientOf, patientsOfDoctor, planDoctor, searchPatients } from '@/lib/nurse-directory';
 import { formatDate, formatMobile } from '@/lib/nurse-schedule';
 import { isIos } from '@/lib/push-client';
 
-const RECENT_COUNT = 4;
+const COMING_UP_COUNT = 6;
 const DOCTOR_TONE = { general: 'gray', gynecology: 'pink', pediatrics: 'teal' };
 const DOCTOR_ICON = { general: Stethoscope, gynecology: HeartPulse, pediatrics: Baby };
 
@@ -96,6 +97,15 @@ function NurseToday({ onChangeDoctor }) {
   const patients = directory.patients;
   // The desk doctor's patients first in suggestions; lists show only hers.
   const mine = useMemo(() => patientsOfDoctor(patients, deskDoctor?.id), [deskDoctor, patients]);
+  const schedule = useNurseSchedule();
+  // Her patients due after today, soonest first (today's are listed above).
+  const comingUp = useMemo(() => {
+    if (schedule.status !== 'ready') return [];
+    return mine
+      .map((patient) => withSchedule(patient, schedule))
+      .filter((patient) => patient.next?.date && patient.next.date > schedule.today)
+      .sort(byNextVisit);
+  }, [mine, schedule]);
   const suggestions = useMemo(() => {
     const ranked = searchPatients(patients, query, 0);
     const own = ranked.filter((patient) => !deskDoctor || isPatientOf(patient, deskDoctor.id));
@@ -247,7 +257,14 @@ function NurseToday({ onChangeDoctor }) {
               <ul aria-label="Matching patients" className="ios-group" id="nurse-suggestions" role="listbox">
                 {suggestions.map((patient, index) => (
                   <li className="ios-cell" key={patient.id} role="presentation">
-                    <PatientRow id={`suggestion-${index}`} option patient={patient} selected={index === activeIndex} showDate={false} />
+                    <PatientRow
+                      id={`suggestion-${index}`}
+                      option
+                      patient={schedule.status === 'ready' ? withSchedule(patient, schedule) : patient}
+                      selected={index === activeIndex}
+                      showDate={false}
+                      today={schedule.status === 'ready' ? schedule.today : null}
+                    />
                   </li>
                 ))}
               </ul>
@@ -367,14 +384,13 @@ function NurseToday({ onChangeDoctor }) {
             </section>
           ) : null}
 
-          <section className="ios-section" aria-labelledby="recent-heading">
+          <section className="ios-section" aria-labelledby="upcoming-heading">
             <div className="ios-section-head">
-              <h2 id="recent-heading">Recent patients</h2>
-              {mine.length > RECENT_COUNT || mine.length !== patients.length ? (
-                <Link className="ios-section-link" href="/nurse/patients">See all</Link>
-              ) : null}
+              <h2 id="upcoming-heading">Coming up</h2>
+              {schedule.status === 'ready' ? <span className="ios-section-count">{comingUp.length}</span> : null}
+              <Link className="ios-section-link" href="/nurse/patients">All patients</Link>
             </div>
-            {listLoading ? (
+            {listLoading || schedule.status === 'idle' ? (
               <div className="ios-group">
                 <PatientRowSkeleton />
                 <PatientRowSkeleton />
@@ -385,18 +401,24 @@ function NurseToday({ onChangeDoctor }) {
                 <p>The patient list could not load. Search still works.</p>
                 <button className="ios-button is-tinted" type="button" onClick={() => void loadDirectory({ fresh: true })}>Try again</button>
               </div>
-            ) : mine.length ? (
-              <ul className="ios-group nurse-list">
-                {mine.slice(0, RECENT_COUNT).map((patient) => (
-                  <li className="ios-cell" key={patient.id}><PatientRow onRemove={requestRemove} patient={patient} /></li>
-                ))}
-              </ul>
+            ) : comingUp.length ? (
+              <>
+                <ul className="ios-group nurse-list">
+                  {comingUp.slice(0, COMING_UP_COUNT).map((patient) => (
+                    <li className="ios-cell" key={patient.id}><PatientRow onRemove={requestRemove} patient={patient} today={schedule.today} /></li>
+                  ))}
+                </ul>
+                <p className="ios-section-foot">
+                  {comingUp.length > COMING_UP_COUNT ? `${comingUp.length - COMING_UP_COUNT} more in All patients. ` : ''}Next visits after today, soonest first.
+                </p>
+              </>
             ) : (
               <p className="ios-section-foot">
-                {deskDoctor ? `No patients of ${deskDoctor.name} yet. Search a mobile number to find or add one.` : 'No patients yet. Search a mobile number to add one.'}
+                {schedule.status === 'error'
+                  ? 'Next visits could not load. Open this page again to retry.'
+                  : deskDoctor ? `No visits booked with ${deskDoctor.name} after today.` : 'No visits booked after today.'}
               </p>
             )}
-            {mine.length ? <p className="ios-section-foot">Swipe a patient left to remove them from {hospitalName}.</p> : null}
           </section>
         </>
       ) : null}

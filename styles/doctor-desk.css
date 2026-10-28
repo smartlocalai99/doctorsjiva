@@ -821,6 +821,10 @@ html:has(.desk-shell) {
   font-variant-numeric: tabular-nums;
 }
 
+.ios-section.is-today > .ios-section-head h2 {
+  color: var(--ios-orange-text);
+}
+
 .ios-section.is-missed .ios-section-head h2,
 .ios-section.is-missed .ios-section-count {
   color: var(--ios-red-text);
@@ -968,6 +972,10 @@ button.ios-cell-link:active {
   line-height: 1.35;
 }
 
+.ios-cell-line.is-missed {
+  color: var(--ios-red-text);
+}
+
 .ios-chevron {
   color: var(--ios-label-3);
 }
@@ -1083,6 +1091,47 @@ button.ios-cell-link:active {
 
 .ios-status.is-late {
   color: var(--ios-orange-text);
+}
+
+/* Next visit at the end of a patient row: the sort key, so it is easy to
+   scan down the right edge. */
+.ios-cell-link.has-trail {
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+}
+
+.ios-next {
+  display: grid;
+  justify-items: end;
+  align-self: center;
+  gap: 1px;
+  color: var(--ios-label);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ios-next b {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+}
+
+.ios-next small {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+.ios-next.is-today b {
+  color: var(--ios-orange-text);
+}
+
+.ios-next.is-missed b {
+  color: var(--ios-red-text);
+}
+
+.ios-next.is-none small {
+  color: var(--ios-label-3);
 }
 
 /* What to have ready */

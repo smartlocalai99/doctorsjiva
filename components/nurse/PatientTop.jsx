@@ -5,8 +5,9 @@ import { NurseSheet } from '@/components/nurse/NurseSheet';
 import { initials } from '@/lib/nurse-directory';
 import { childAge, cycleDay, DEPARTMENT_LABEL, formatDate, formatMobile, ordinal, pregnancyMonth, pregnancyWeek } from '@/lib/nurse-schedule';
 
-// Like a contact card: who she is, then call, WhatsApp or her hospital ID.
-export function PatientHeader({ onEditId, patient }) {
+// Like a contact card: who she is, what she is under and when she is next
+// due, then call, WhatsApp or her hospital ID.
+export function PatientHeader({ onEditId, patient, tags = [] }) {
   const mobile = String(patient.mobile || '').replace(/^\+91/, '');
   return (
     <section className="ios-contact" aria-label="Contact">
@@ -14,6 +15,11 @@ export function PatientHeader({ onEditId, patient }) {
         <span>+91 {formatMobile(mobile)}</span>
         {patient.hospitalPatientId ? <span>ID {patient.hospitalPatientId}</span> : null}
       </p>
+      {tags.length ? (
+        <p className="nurse-tags">
+          {tags.map((tag) => <span className={`nurse-tag is-${tag.tone}`} key={tag.text}>{tag.text}</span>)}
+        </p>
+      ) : null}
       <div className="ios-contact-actions">
         <a href={`tel:+91${mobile}`}><Phone aria-hidden="true" size={20} strokeWidth={2.2} /><span>Call</span></a>
         <a href={`https://wa.me/91${mobile}`} rel="noreferrer" target="_blank"><WhatsAppIcon /><span>WhatsApp</span></a>

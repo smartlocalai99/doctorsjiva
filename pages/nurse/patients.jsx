@@ -7,7 +7,8 @@ import { NurseFrame, NurseLoading, NurseNavActions } from '@/components/nurse/Nu
 import { NurseLogin } from '@/components/nurse/NurseLogin';
 import { PatientRow, PatientRowSkeleton } from '@/components/nurse/PatientRow';
 import { useRemovePatient } from '@/components/nurse/RemovePatient';
-import { useNurse } from '@/contexts/NurseContext';
+import { useNurse, useNurseSchedule, withSchedule } from '@/contexts/NurseContext';
+import { byNextVisit, groupByNextVisit } from '@/lib/doctor-desk';
 import { patientsOfDoctor, searchPatients } from '@/lib/nurse-directory';
 
 const PAGE = 40;
@@ -19,8 +20,9 @@ export default function NursePatientsPage() {
   return <AllPatients />;
 }
 
-// Every patient of the nurse's hospital, newest first. Uses the list the
-// desk already loaded; filtering happens on the phone.
+// Every patient of the nurse's hospital, by when she is next due: today,
+// tomorrow, this week, later, no visit booked. Uses the list the desk
+// already loaded; filtering and sorting happen on the phone.
 function AllPatients() {
   const { deskDoctor, directory, ensureDirectory, loadDirectory, profile } = useNurse();
   const { removeSheet, requestRemove } = useRemovePatient();
@@ -43,6 +45,19 @@ function AllPatients() {
     [patients, query],
   );
   const loading = directory.status === 'idle' && !patients.length;
+  const schedule = useNurseSchedule();
+  const scheduled = schedule.status === 'ready';
+  const searching = query.trim().length >= 2;
+  // Search keeps its best-match order; otherwise soonest visit first.
+  const ordered = useMemo(() => {
+    if (!scheduled) return filtered;
+    const list = filtered.map((patient) => withSchedule(patient, schedule));
+    return searching ? list : list.sort(byNextVisit);
+  }, [filtered, schedule, scheduled, searching]);
+  const groups = useMemo(
+    () => (scheduled && !searching ? groupByNextVisit(ordered.slice(0, shown), schedule.today) : null),
+    [ordered, schedule, scheduled, searching, shown],
+  );
 
   const refresh = async () => {
     setRefreshing(true);
@@ -99,35 +114,53 @@ function AllPatients() {
         ) : null}
       </div>
 
-      <section className="ios-section" aria-labelledby="patients-list">
-        <div className="ios-section-head">
-          <h2 id="patients-list">{query.trim().length >= 2 ? 'Results' : scope === 'mine' && deskDoctor ? `${deskDoctor.name}’s patients` : 'All patients'}</h2>
-          {!loading ? <span className="ios-section-count">{filtered.length.toLocaleString('en-IN')}</span> : null}
+      {loading ? (
+        <div className="ios-group">
+          {Array.from({ length: 6 }, (_, index) => <PatientRowSkeleton key={index} />)}
         </div>
-        {loading ? (
-          <div className="ios-group">
-            {Array.from({ length: 6 }, (_, index) => <PatientRowSkeleton key={index} />)}
-          </div>
-        ) : filtered.length ? (
-          <>
-            <ul className="ios-group nurse-list">
-              {filtered.slice(0, shown).map((patient) => (
-                <li className="ios-cell" key={patient.id}><PatientRow onRemove={requestRemove} patient={patient} /></li>
-              ))}
-            </ul>
-            <p className="ios-section-foot">Newest first. Swipe a patient left to remove them.</p>
-            {filtered.length > shown ? (
-              <button className="ios-button is-tinted" type="button" onClick={() => setShown((count) => count + PAGE)}>
-                Show more ({(filtered.length - shown).toLocaleString('en-IN')} left)
-              </button>
-            ) : null}
-          </>
-        ) : (
-          <div className="ios-notice">
-            <p>{query ? `No patient matches “${query.trim()}”. Try the last 4 digits of the mobile number.` : 'No patients yet. Add one from Today with her mobile number.'}</p>
-          </div>
-        )}
-      </section>
+      ) : ordered.length ? (
+        <>
+          {groups ? groups.map((group) => (
+            <section className={`ios-section ${group.id === 'today' ? 'is-today' : ''}`} aria-labelledby={`next-${group.id}`} key={group.id}>
+              <div className="ios-section-head">
+                <h2 id={`next-${group.id}`}>{group.title}</h2>
+                <span className="ios-section-count">{group.patients.length.toLocaleString('en-IN')}</span>
+              </div>
+              <ul className="ios-group nurse-list">
+                {group.patients.map((patient) => (
+                  <li className="ios-cell" key={patient.id}><PatientRow onRemove={requestRemove} patient={patient} today={schedule.today} /></li>
+                ))}
+              </ul>
+            </section>
+          )) : (
+            <section className="ios-section" aria-labelledby="patients-list">
+              <div className="ios-section-head">
+                <h2 id="patients-list">{searching ? 'Results' : scope === 'mine' && deskDoctor ? `${deskDoctor.name}’s patients` : 'All patients'}</h2>
+                <span className="ios-section-count">{ordered.length.toLocaleString('en-IN')}</span>
+              </div>
+              <ul className="ios-group nurse-list">
+                {ordered.slice(0, shown).map((patient) => (
+                  <li className="ios-cell" key={patient.id}>
+                    <PatientRow onRemove={requestRemove} patient={patient} today={scheduled ? schedule.today : null} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <p className="ios-section-foot">
+            {searching ? 'Best matches first.' : scheduled ? 'Soonest visit first.' : 'Loading next visits…'} Swipe a patient left to remove them.
+          </p>
+          {ordered.length > shown ? (
+            <button className="ios-button is-tinted" type="button" onClick={() => setShown((count) => count + PAGE)}>
+              Show more ({(ordered.length - shown).toLocaleString('en-IN')} left)
+            </button>
+          ) : null}
+        </>
+      ) : (
+        <div className="ios-notice">
+          <p>{query ? `No patient matches “${query.trim()}”. Try the last 4 digits of the mobile number.` : 'No patients yet. Add one from Today with her mobile number.'}</p>
+        </div>
+      )}
       {removeSheet}
     </NurseFrame>
   );

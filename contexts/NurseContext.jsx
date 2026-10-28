@@ -27,6 +27,7 @@ export async function nurseRequest(path, { method = 'GET', body } = {}) {
 }
 
 const NO_DIRECTORY = { loadedAt: 0, patients: [], status: 'idle' };
+const NO_SCHEDULE = { patients: {}, status: 'idle', today: null };
 
 // The doctor the nurse works with today (asked after every login, kept
 // while the page is reloaded).
@@ -49,6 +50,11 @@ export function NurseProvider({ children }) {
   const [directory, setDirectory] = useState(NO_DIRECTORY);
   const directoryRequested = useRef(false);
   const [deskDoctorId, setDeskDoctorId] = useState(null);
+  // Next visit date and pregnancy / IUI / baby per patient (lists sort and
+  // label by it). Read again each time a list opens; the old copy stays on
+  // screen meanwhile.
+  const [schedule, setSchedule] = useState(NO_SCHEDULE);
+  const scheduleBusy = useRef(false);
 
   const loadDirectory = useCallback(async ({ fresh = false } = {}) => {
     directoryRequested.current = true;
@@ -57,6 +63,19 @@ export function NurseProvider({ children }) {
       setDirectory({ loadedAt: data.loadedAt, patients: toPatients(data.patients), status: 'ready' });
     } catch {
       setDirectory((current) => ({ ...current, status: current.patients.length ? 'ready' : 'error' }));
+    }
+  }, []);
+
+  const loadSchedule = useCallback(async () => {
+    if (scheduleBusy.current) return;
+    scheduleBusy.current = true;
+    try {
+      const data = await nurseRequest('/api/nurse/schedule');
+      setSchedule({ patients: data.patients || {}, status: 'ready', today: data.today });
+    } catch {
+      setSchedule((current) => ({ ...current, status: current.status === 'ready' ? 'ready' : 'error' }));
+    } finally {
+      scheduleBusy.current = false;
     }
   }, []);
 
@@ -156,14 +175,15 @@ export function NurseProvider({ children }) {
     await nurseRequest('/api/nurse/logout', { body: {}, method: 'POST' }).catch(() => undefined);
     directoryRequested.current = false;
     setDirectory(NO_DIRECTORY);
+    setSchedule(NO_SCHEDULE);
     setDeskDoctorId(null);
     setProfile(null);
     setStatus('signed_out');
   }, []);
 
   const value = useMemo(
-    () => ({ chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, login, logout, profile, refresh, rememberPatient, status }),
-    [chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, login, logout, profile, refresh, rememberPatient, status],
+    () => ({ chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, loadSchedule, login, logout, profile, refresh, rememberPatient, schedule, status }),
+    [chooseDeskDoctor, deskDoctor, directory, ensureDirectory, forgetPatient, loadDirectory, loadSchedule, login, logout, profile, refresh, rememberPatient, schedule, status],
   );
   return <NurseContext value={value}>{children}</NurseContext>;
 }
@@ -173,3 +193,28 @@ export function useNurse() {
   if (!value) throw new Error('useNurse must be used inside NurseProvider.');
   return value;
 }
+
+// The schedule for the lists: read when a list opens and when the nurse
+// comes back to it (after saving a visit, the next date has moved).
+export function useNurseSchedule() {
+  const { loadSchedule, schedule } = useNurse();
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadSchedule(), 0);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void loadSchedule();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [loadSchedule]);
+  return schedule;
+}
+
+// A directory patient with her schedule: next visit, pregnancy, cycle, baby.
+export function withSchedule(patient, schedule) {
+  const extra = schedule.patients[patient.id];
+  return extra ? { ...patient, ...extra } : { ...patient, next: null, missed: null };
+}
+

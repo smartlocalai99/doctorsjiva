@@ -22,7 +22,8 @@ import { CycleSummary, DoctorRow, DoctorSheet, PatientAvatar, PatientHeader, Pla
 import { NextVisitCard, Timeline } from '@/components/nurse/Timeline';
 import { nurseRequest, useNurse } from '@/contexts/NurseContext';
 import { planDoctor } from '@/lib/nurse-directory';
-import { buildTimeline, formatDate, suggestedNextDate, withParentRecords } from '@/lib/nurse-schedule';
+import { untilText } from '@/lib/doctor-desk';
+import { buildTimeline, childAge, cycleDay, formatDate, pregnancyWeek, suggestedNextDate, withParentRecords } from '@/lib/nurse-schedule';
 
 export default function NursePatientPage() {
   const { status } = useNurse();
@@ -337,6 +338,17 @@ function PatientScreen() {
       </button>
     </div>
   );
+  // Under her name: what she is under, and the next visit already saved.
+  const savedNext = suggestedNextDate(cards, nextCard, today, view.lastFollowup?.nextDate);
+  const tags = [
+    ...shownPlans.map((plan) => (plan.type === 'pregnancy'
+      ? { text: `Pregnant, ${Math.max(0, pregnancyWeek(plan, today))} weeks`, tone: 'pink' }
+      : { text: `Baby ${plan.personName}, ${childAge(plan.birthDate, today)}`, tone: 'teal' })),
+    ...shownCycles.map((cycle) => ({ text: `IUI cycle, day ${cycleDay(cycle.anchorDate, today)}`, tone: 'purple' })),
+    savedNext
+      ? { text: `Next visit ${formatDate(savedNext, { weekday: 'short', day: 'numeric', month: 'short' })} (${untilText(today, savedNext).toLowerCase()})`, tone: savedNext === today ? 'orange' : 'blue' }
+      : { text: 'No next visit booked', tone: 'gray' },
+  ];
   const canStartPregnancy = (department === 'gynecology' || department === 'general') && !hasPregnancy;
   const canStartCycle = department === 'gynecology' && !cycles.length && !hasPregnancy;
 
@@ -345,7 +357,7 @@ function PatientScreen() {
       <Head><title>{`${patient.name || 'Patient'} · DrJiva Nurse`}</title></Head>
 
       <PageHeader above={<PatientAvatar name={patient.name} />} back={back} title={patient.name || 'Patient'} trailing={null} />
-      <PatientHeader onEditId={() => setSheet({ type: 'hospitalId' })} patient={patient} />
+      <PatientHeader onEditId={() => setSheet({ type: 'hospitalId' })} patient={patient} tags={tags} />
 
       {notice ? (
         <div className="nurse-saved" ref={savedRef} role="status" tabIndex={-1}>

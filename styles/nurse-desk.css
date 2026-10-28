@@ -172,6 +172,30 @@ button.ios-cell-link:disabled {
   align-items: center;
 }
 
+.nurse-row-care {
+  overflow: hidden;
+  color: var(--ios-label);
+  font-size: 15px;
+  letter-spacing: -0.016em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-row-contact {
+  overflow: hidden;
+  color: var(--ios-label-2);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.016em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nurse-row-contact .is-id {
+  margin-left: 8px;
+  color: var(--ios-label-3);
+}
+
 .nurse-row-end {
   display: inline-flex;
   align-items: center;
@@ -253,6 +277,51 @@ button.ios-cell-link:disabled {
 
 .ios-contact-actions button:active {
   background: var(--ios-highlight);
+}
+
+/* Under the name: pregnancy / IUI / baby and the next visit */
+.nurse-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+.nurse-tag {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.nurse-tag.is-pink {
+  background: color-mix(in srgb, var(--ios-pink) 12%, transparent);
+  color: #c4163f;
+}
+
+.nurse-tag.is-purple {
+  background: color-mix(in srgb, var(--ios-purple) 12%, transparent);
+  color: #8a35b5;
+}
+
+.nurse-tag.is-teal {
+  background: color-mix(in srgb, var(--ios-teal) 14%, transparent);
+  color: #12748a;
+}
+
+.nurse-tag.is-blue {
+  background: var(--ios-tint-soft);
+  color: var(--ios-tint);
+}
+
+.nurse-tag.is-orange {
+  background: color-mix(in srgb, var(--ios-orange) 16%, transparent);
+  color: var(--ios-orange-text);
 }
 
 /* "Saved" after Save visit */

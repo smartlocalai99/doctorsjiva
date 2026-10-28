@@ -2,33 +2,42 @@ import { ChevronRight, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 
+import { CareMark, NextVisitTag, careText } from '@/components/doctor/DeskParts';
 import { initials } from '@/lib/nurse-directory';
 import { formatDate, formatMobile } from '@/lib/nurse-schedule';
 
 const REVEAL = 96;
 
-function RowContent({ patient, showDate }) {
+// With her schedule (`today` given): the pregnancy / IUI / baby tile on the
+// left and her next visit on the right. Without it: initials and the day
+// she was last seen.
+function RowContent({ patient, showDate, today }) {
+  const scheduled = Boolean(today) && patient.next !== undefined;
+  const care = scheduled ? careText(patient) : '';
   return (
     <>
-      <span aria-hidden="true" className="nurse-avatar">{initials(patient.name)}</span>
+      {scheduled ? <CareMark patient={patient} today={today} /> : <span aria-hidden="true" className="nurse-avatar">{initials(patient.name)}</span>}
       <span className="ios-cell-body">
         <strong className="ios-cell-title">{patient.name || 'Name not saved'}</strong>
-        <span className="ios-cell-sub">
-          <span>+91 {formatMobile(patient.mobile)}</span>
+        {care && care !== 'Follow-up' ? <span className="nurse-row-care">{care}</span> : null}
+        <span className="nurse-row-contact">
+          {formatMobile(patient.mobile)}
           {patient.hospitalId ? <span className="is-id">{patient.hospitalId}</span> : null}
         </span>
       </span>
-      <span className="nurse-row-end">
-        {showDate && patient.lastSeen ? <span>{formatDate(patient.lastSeen, { day: 'numeric', month: 'short' })}</span> : null}
-        <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
-      </span>
+      {scheduled ? <NextVisitTag patient={patient} today={today} /> : (
+        <span className="nurse-row-end">
+          {showDate && patient.lastSeen ? <span>{formatDate(patient.lastSeen, { day: 'numeric', month: 'short' })}</span> : null}
+        </span>
+      )}
+      <ChevronRight aria-hidden="true" className="ios-chevron" size={18} strokeWidth={2.4} />
     </>
   );
 }
 
 // One patient in the recent list, "View all" and search suggestions. With
 // `onRemove`, swiping the row left shows a red "Remove" button.
-export function PatientRow({ id, onRemove, option = false, patient, selected = false, showDate = true }) {
+export function PatientRow({ id, onRemove, option = false, patient, selected = false, showDate = true, today = null }) {
   const [open, setOpen] = useState(false);
   const [dragX, setDragX] = useState(null);
   const gesture = useRef(null);
@@ -38,12 +47,12 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
     return (
       <Link
         aria-selected={option ? selected : undefined}
-        className="ios-cell-link nurse-row"
+        className="ios-cell-link nurse-row has-trail"
         href={`/nurse/patient/${patient.id}`}
         id={id}
         role={option ? 'option' : undefined}
       >
-        <RowContent patient={patient} showDate={showDate} />
+        <RowContent patient={patient} showDate={showDate} today={today} />
       </Link>
     );
   }
@@ -98,7 +107,7 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
       </button>
       ) : null}
       <Link
-        className="ios-cell-link nurse-row nurse-swipe-row"
+        className="ios-cell-link nurse-row has-trail nurse-swipe-row"
         draggable={false}
         href={`/nurse/patient/${patient.id}`}
         id={id}
@@ -120,7 +129,7 @@ export function PatientRow({ id, onRemove, option = false, patient, selected = f
         onPointerUp={onPointerEnd}
         style={{ transform: `translateX(${offset}px)`, transition: dragX === null ? 'transform 180ms ease' : 'none' }}
       >
-        <RowContent patient={patient} showDate={showDate} />
+        <RowContent patient={patient} showDate={showDate} today={today} />
       </Link>
     </div>
   );

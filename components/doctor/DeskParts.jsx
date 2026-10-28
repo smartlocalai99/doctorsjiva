@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDoctorDesk } from '@/contexts/DoctorDeskContext';
 import { useShell } from '@/contexts/ShellContext';
+import { untilText } from '@/lib/doctor-desk';
 import { childAge, formatDate, formatMobile, ordinal } from '@/lib/nurse-schedule';
 
 export const shortDate = (date) => formatDate(date, { day: 'numeric', month: 'short' });
@@ -137,6 +138,31 @@ export function StatusTag({ appointment }) {
       {status === 'late' ? `Came ${shortDate(appointment.cameOn)}` : time || STATUS[status]}
     </span>
   );
+}
+
+// At the end of a patient row: when she is next due at the hospital,
+// the date the lists are sorted by.
+export function NextVisitTag({ patient, today }) {
+  const date = patient?.next?.date;
+  if (date) {
+    const days = untilText(today, date);
+    const near = days === 'Today' || days === 'Tomorrow';
+    return (
+      <span className={`ios-next ${days === 'Today' ? 'is-today' : ''}`}>
+        <b>{near ? days : dayDate(date)}</b>
+        <small>{near ? dayDate(date) : days}</small>
+      </span>
+    );
+  }
+  if (patient?.missed) {
+    return (
+      <span className="ios-next is-missed">
+        <b>Didn’t come</b>
+        <small>{shortDate(patient.missed.date)}</small>
+      </span>
+    );
+  }
+  return <span className="ios-next is-none"><small>No visit booked</small></span>;
 }
 
 // What to have ready: overdue tests on one red line, the rest on the next.
