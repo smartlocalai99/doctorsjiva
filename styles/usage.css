@@ -1,0 +1,800 @@
+/* ===================================================================
+   Usage page (/usage): the owner's view of who uses the three apps.
+   Same iPhone look as the doctor desk (system font, grouped white cards
+   on grey). Each app keeps one colour everywhere, shown as a dot or a
+   mark next to text, never as text colour:
+     patient app  blue   #2a78d6
+     nurse desk   orange #eb6834
+     doctor desk  green  #1baf7a
+   (checked for colour blindness with the dataviz validator; the green is
+   below 3:1 on white, so every mark has a written label or table too).
+   The loud part is "right now"; everything below it stays quiet.
+   =================================================================== */
+.usage-shell {
+  --usage-patient: #2a78d6;
+  --usage-nurse: #eb6834;
+  --usage-doctor: #1baf7a;
+  --usage-all: #5b6470;
+  --usage-live: #34c759;
+  min-height: 100dvh;
+  background: var(--ios-bg);
+  color: var(--ios-label);
+  font-family: var(--ios-sans);
+  font-size: 17px;
+  letter-spacing: -0.022em;
+  line-height: 1.3;
+  -webkit-font-smoothing: antialiased;
+}
+
+html:has(.usage-shell),
+html:has(.usage-shell) body {
+  color-scheme: light;
+  background: var(--ios-bg);
+}
+
+.usage-shell :is(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--ios-tint);
+  outline-offset: 2px;
+}
+
+.usage-center {
+  display: grid;
+  min-height: 100dvh;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.usage-error {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ios-red) 10%, var(--ios-bg-2));
+  color: var(--ios-red-text);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ---------- Login ---------- */
+.usage-login {
+  display: grid;
+  width: min(360px, 100%);
+  gap: 16px;
+  justify-items: center;
+}
+
+.usage-login h1 {
+  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.usage-login > p {
+  margin-top: -8px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.usage-field {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+  text-align: left;
+}
+
+.usage-field span {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.usage-field input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ios-bg-2);
+  font: inherit;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  outline: none;
+}
+
+.usage-field input:focus {
+  box-shadow: inset 0 0 0 2px var(--ios-tint);
+}
+
+.usage-login-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ios-label-2);
+  font-size: 13px;
+}
+
+/* ---------- Page ---------- */
+.usage-page {
+  display: grid;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  gap: 28px;
+  padding: calc(20px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom));
+}
+
+.usage-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usage-head h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.usage-head p {
+  margin-top: 4px;
+  color: var(--ios-label-2);
+  font-size: 13px;
+}
+
+.usage-head-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.usage-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  color: var(--ios-tint);
+  cursor: pointer;
+}
+
+.usage-icon:disabled {
+  opacity: 0.5;
+}
+
+.is-spinning {
+  animation: usage-spin 0.9s linear infinite;
+}
+
+@keyframes usage-spin {
+  to { transform: rotate(360deg); }
+}
+
+.usage-section {
+  display: grid;
+  gap: 12px;
+}
+
+.usage-section > h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.026em;
+  line-height: 1.2;
+}
+
+.usage-note {
+  margin-top: -6px;
+  max-width: 64ch;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.usage-card {
+  border-radius: 14px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+}
+
+.usage-empty {
+  padding: 16px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+.usage-apps {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 760px) {
+  .usage-apps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.usage-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--usage-all);
+}
+
+.usage-dot.is-patient { background: var(--usage-patient); }
+.usage-dot.is-nurse { background: var(--usage-nurse); }
+.usage-dot.is-doctor { background: var(--usage-doctor); }
+
+/* ---------- Right now ---------- */
+.usage-live {
+  display: grid;
+  gap: 4px;
+  padding: 18px 16px 6px;
+  border-radius: 18px;
+  background: var(--ios-bg-2);
+  box-shadow: var(--ios-shadow);
+}
+
+.usage-live-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+
+.usage-live-head h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.25;
+}
+
+.usage-live-head strong {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  vertical-align: -4px;
+}
+
+.usage-live-pulse {
+  position: relative;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ios-gray);
+}
+
+.usage-live-pulse.is-on {
+  background: var(--usage-live);
+}
+
+.usage-live-pulse.is-on::after {
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  background: var(--usage-live);
+  content: '';
+  opacity: 0;
+  animation: usage-pulse 2.4s ease-out infinite;
+}
+
+@keyframes usage-pulse {
+  0% { opacity: 0.45; transform: scale(0.5); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usage-live-pulse.is-on::after,
+  .is-spinning {
+    animation: none;
+  }
+}
+
+.usage-live-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 0.5px solid var(--ios-separator);
+}
+
+.usage-live-who {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.usage-live-who strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-live-who small,
+.usage-live-where small {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+.usage-live-where {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+}
+
+.usage-live-where strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.usage-live-empty {
+  padding: 4px 0 14px;
+  color: var(--ios-label-2);
+  font-size: 15px;
+}
+
+/* ---------- Period switch (iOS segmented control) ---------- */
+.usage-periods {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--ios-fill);
+  justify-self: start;
+  width: min(420px, 100%);
+}
+
+.usage-periods button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ios-label);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.usage-periods button[aria-pressed='true'] {
+  background: var(--ios-bg-2);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 0 0 0.5px rgb(0 0 0 / 4%);
+  font-weight: 600;
+}
+
+.usage-periods.is-small {
+  width: auto;
+}
+
+.usage-periods.is-small button {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* ---------- One app's numbers ---------- */
+.usage-app {
+  display: grid;
+  gap: 2px;
+  padding: 16px 16px 6px;
+}
+
+.usage-app h3,
+.usage-screens h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+}
+
+.usage-app-people {
+  padding: 2px 0 8px;
+  color: var(--ios-label-2);
+  font-size: 17px;
+}
+
+.usage-app-people strong {
+  margin-right: 2px;
+  color: var(--ios-label);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-rows > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 0.5px solid var(--ios-separator);
+  font-size: 15px;
+}
+
+.usage-card.usage-rows {
+  padding: 4px 16px;
+}
+
+.usage-card.usage-rows > div:first-child {
+  border-top: 0;
+}
+
+.usage-rows dt {
+  color: var(--ios-label);
+}
+
+.usage-rows dd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.usage-rows dd small {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.usage-app-note {
+  padding: 8px 0 10px;
+  border-top: 0.5px solid var(--ios-separator);
+  color: var(--ios-label-2);
+  font-size: 13px;
+}
+
+/* ---------- Columns (people per day, opens per hour) ---------- */
+.usage-multiples {
+  display: grid;
+  gap: 4px;
+  padding: 8px 16px;
+}
+
+@media (min-width: 760px) {
+  .usage-multiples {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
+.usage-multiple {
+  padding: 10px 0 8px;
+}
+
+.usage-multiple + .usage-multiple {
+  border-top: 0.5px solid var(--ios-separator);
+}
+
+@media (min-width: 760px) {
+  .usage-multiple + .usage-multiple {
+    border-top: 0;
+  }
+}
+
+.usage-multiple figcaption,
+.usage-hours figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.usage-multiple figcaption span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usage-multiple figcaption small {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.usage-columns {
+  position: relative;
+  display: flex;
+  height: 88px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2px;
+  border-bottom: 1px solid #e3e3e8;
+}
+
+/* A hairline at the highest value, labelled with it. */
+.usage-columns-peak {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-top: 1px solid #ededf1;
+  pointer-events: none;
+}
+
+.usage-column {
+  position: relative;
+  flex: 1;
+  max-width: 24px;
+  height: 100%;
+  outline-offset: 1px;
+}
+
+.usage-column::before {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: max(var(--h), 0px);
+  border-radius: 4px 4px 0 0;
+  background: var(--usage-all);
+  content: '';
+}
+
+.usage-column.is-patient::before { background: var(--usage-patient); }
+.usage-column.is-nurse::before { background: var(--usage-nurse); }
+.usage-column.is-doctor::before { background: var(--usage-doctor); }
+
+.usage-column:is(:hover, :focus-visible)::before {
+  filter: brightness(0.85);
+}
+
+/* The day or hour, on hover or tap. */
+.usage-column:is(:hover, :focus)::after {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgb(28 28 30 / 92%);
+  color: #fff;
+  content: attr(data-tip);
+  font-size: 12px;
+  font-weight: 500;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.usage-column:first-child:is(:hover, :focus)::after,
+.usage-column:nth-child(2):is(:hover, :focus)::after,
+.usage-column:nth-child(3):is(:hover, :focus)::after { left: 0; transform: none; }
+
+.usage-column:nth-last-child(-n + 3):is(:hover, :focus)::after { right: 0; left: auto; transform: none; }
+
+.usage-columns-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--ios-label-2);
+  font-size: 11px;
+}
+
+.usage-hours {
+  padding: 16px;
+}
+
+.usage-columns.is-hours {
+  height: 120px;
+}
+
+/* ---------- Screens (bars) ---------- */
+.usage-screens {
+  padding: 16px;
+}
+
+.usage-screens ol {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.usage-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.usage-bar-label small {
+  color: var(--ios-label);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-bar-track {
+  display: block;
+  height: 8px;
+  margin: 5px 0 3px;
+}
+
+.usage-bar {
+  display: block;
+  width: var(--w);
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--usage-all);
+}
+
+.usage-bar.is-patient { background: var(--usage-patient); }
+.usage-bar.is-nurse { background: var(--usage-nurse); }
+.usage-bar.is-doctor { background: var(--usage-doctor); }
+
+.usage-bar-meta {
+  color: var(--ios-label-2);
+  font-size: 12px;
+}
+
+/* ---------- Tables ---------- */
+.usage-table-wrap {
+  overflow-x: auto;
+}
+
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-table :is(th, td) {
+  padding: 11px 16px;
+  border-top: 0.5px solid var(--ios-separator);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.usage-table thead th {
+  border-top: 0;
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.usage-table :is(th:first-child, td:first-child) {
+  text-align: left;
+}
+
+.usage-table tbody th {
+  font-weight: 600;
+}
+
+.usage-table tbody th small {
+  display: block;
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.usage-table .is-zero {
+  color: var(--ios-label-3);
+}
+
+.usage-table-toggle summary {
+  width: fit-content;
+  color: var(--ios-tint);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.usage-table-toggle .usage-table-wrap {
+  margin-top: 10px;
+  border-radius: 14px;
+  background: var(--ios-bg-2);
+}
+
+/* ---------- Everyone ---------- */
+.usage-people-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.usage-search {
+  display: flex;
+  min-width: min(260px, 100%);
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--ios-fill);
+  color: var(--ios-label-2);
+}
+
+.usage-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label);
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+}
+
+/* Rows of people (nurses, doctors, everyone) */
+.usage-list {
+  padding: 0 16px;
+}
+
+.usage-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 0.5px solid var(--ios-separator);
+}
+
+.usage-row:first-child {
+  border-top: 0;
+}
+
+.usage-row .usage-dot {
+  margin-top: 6px;
+}
+
+.usage-row-main {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+
+.usage-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usage-row-top strong {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-row-top b {
+  flex: none;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-row-top b.is-zero {
+  color: var(--ios-label-3);
+}
+
+.usage-row-main small {
+  color: var(--ios-label-2);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+.usage-people-tools .usage-periods.is-small {
+  overflow-x: auto;
+  max-width: 100%;
+}

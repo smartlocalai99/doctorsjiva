@@ -4,6 +4,7 @@ import { Noto_Sans_Telugu } from 'next/font/google';
 import { AppManifest } from '@/components/AppManifest';
 import { RouteGuard } from '@/components/AppShell';
 import { PwaRegistration } from '@/components/PwaRegistration';
+import { UsageTracker } from '@/components/UsageTracker';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 // The doctor and nurse apps use the phone's own font (SF Pro on iPhone);
@@ -19,6 +20,7 @@ export default function App({ Component, pageProps }) {
           <Component {...pageProps} />
         </RouteGuard>
         <PwaRegistration />
+        <UsageTracker />
       </AuthProvider>
     </div>
   );

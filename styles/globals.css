@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./doctor-desk.css";
 @import "./nurse-desk.css";
+@import "./usage.css";
 
 @theme {
   --color-brand: #2e7ebc;

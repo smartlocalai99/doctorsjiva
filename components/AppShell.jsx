@@ -25,13 +25,16 @@ export function RouteGuard({ children }) {
   // The nurse desk (/nurse) has its own PIN login and never uses the
   // doctor session or the doctor navigation.
   const isNurse = router.pathname === '/nurse' || router.pathname.startsWith('/nurse/');
+  // The usage page has its own owner login.
+  const isUsage = router.pathname === '/usage';
 
   useEffect(() => {
-    if (isNurse || loading) return;
+    if (isNurse || isUsage || loading) return;
     if (!session && !isLogin) void router.replace('/login');
     if (session && isLogin) void router.replace('/');
-  }, [isLogin, isNurse, loading, router, session]);
+  }, [isLogin, isNurse, isUsage, loading, router, session]);
 
+  if (isUsage) return children;
   if (isNurse) return <NurseProvider>{children}</NurseProvider>;
 
   if (loading || (!session && !isLogin) || (session && isLogin)) {
